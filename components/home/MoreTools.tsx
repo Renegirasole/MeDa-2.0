@@ -67,10 +67,10 @@ export function MoreTools() {
         {/* Tasador */}
         <article id="tasador" aria-labelledby="tasador-title" className="flex flex-col rounded-[1.5rem] bg-night p-6 text-white sm:p-8">
           <h3 id="tasador-title" className="text-2xl font-semibold tracking-[-0.02em]">
-            ¿A cuánto lo pongo?
+            Tasador
           </h3>
           <p className="mt-2 text-[15px] leading-relaxed text-night-muted">
-            Para cuando vendes o alquilas: tres precios según tu zona, sin datos inventados.
+            ¿A cuánto lo pongo? Para cuando vendes o alquilas: tres precios según tu zona, sin datos inventados.
           </p>
           <ul className="mt-6 flex flex-col divide-y divide-night-line">
             {APPRAISALS.map((a) => {

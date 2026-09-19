@@ -56,7 +56,8 @@ export function ScoreScale({ score, verdict, tone = "light", size = "lg", labels
           {VERDICT_COPY[verdict].label}
         </p>
         <p className={cn("num flex items-baseline gap-1 leading-none transition-colors duration-200", muted ? "text-muted" : night ? "text-white" : "text-ink")}>
-          <span className={cn("font-semibold tracking-[-0.05em]", size === "lg" ? "text-[3.5rem] md:text-[4rem]" : "text-[2.75rem]")}>
+          {/* key: al cambiar la nota, la cifra entra con un fundido corto (solo opacidad) */}
+          <span key={formatScore(score)} className={cn("animate-num font-semibold tracking-[-0.05em]", size === "lg" ? "text-[3.5rem] md:text-[4rem]" : "text-[2.75rem]")}>
             {formatScore(score)}
           </span>
           <span className={cn("text-lg", night ? "text-night-muted" : "text-muted")}>/10</span>
@@ -109,6 +110,21 @@ export function VerdictPill({ verdict, score, className }: { verdict: Verdict; s
       {score !== undefined && <span className="num">{formatScore(score)}</span>}
       {score !== undefined && <span aria-hidden="true" className="opacity-50">·</span>}
       {VERDICT_COPY[verdict].label}
+    </span>
+  );
+}
+
+/** La Escala en miniatura (barra móvil): tres zonas y el punto en la nota. Decorativa: la nota va en texto al lado. */
+export function MiniScale({ score, verdict, muted = false, className }: { score: number; verdict: Verdict; muted?: boolean; className?: string }) {
+  const clamped = Math.min(10, Math.max(0, score));
+  return (
+    <span aria-hidden="true" className={cn("relative flex h-1.5 w-14 shrink-0 gap-px", className)}>
+      {ZONES.map((z) => (
+        <span key={z.label} className={cn("h-full first:rounded-l-full last:rounded-r-full", muted ? "bg-night-line" : ZONE_BG.night[z.tone])} style={{ flexGrow: z.to - z.from }} />
+      ))}
+      <span className="absolute inset-0 transition-transform duration-300 ease-(--ease-out)" style={{ transform: `translateX(${clamped * 10}%)` }}>
+        <span className={cn("absolute top-1/2 left-0 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-white", muted ? "border-night-muted" : toneFor(verdict).ring)} />
+      </span>
     </span>
   );
 }

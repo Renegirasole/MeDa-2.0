@@ -8,8 +8,9 @@ const PROMISES = ["Gratis", "Sin registrarte", "En menos de 2 minutos"];
 export function Hero() {
   return (
     <section aria-labelledby="hero-title" className="relative">
-      <Container className="grid gap-12 pt-10 pb-20 md:pt-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)] lg:items-center lg:gap-16 lg:pt-20 lg:pb-28">
-        <div className="stagger max-w-xl">
+      {/* Móvil: titular → simulación → resto, para que la nota se vea al entrar. Escritorio: dos columnas. */}
+      <Container className="grid gap-8 pt-8 pb-20 md:pt-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)] lg:grid-rows-[auto_1fr] lg:gap-x-16 lg:gap-y-0 lg:pt-20 lg:pb-28">
+        <div className="stagger max-w-xl lg:col-start-1 lg:row-start-1 lg:self-end">
           <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[14px] text-ink-2">
             {PROMISES.map((p) => (
               <li key={p} className="flex items-center gap-1.5">
@@ -23,7 +24,17 @@ export function Hero() {
             <br />
             para eso?
           </h1>
-          <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-ink-2 md:text-xl md:leading-relaxed">
+        </div>
+
+        <div
+          id="simulacion"
+          className="scroll-mt-24 motion-safe:animate-rise motion-safe:[animation-delay:160ms] lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-center"
+        >
+          <LiveSimulation />
+        </div>
+
+        <div className="stagger max-w-xl lg:col-start-1 lg:row-start-2">
+          <p className="max-w-[34rem] text-lg leading-relaxed text-ink-2 lg:mt-6 md:text-xl md:leading-relaxed">
             Dinos cuánto ganas, cuánto gastas y cuánto tienes ahorrado. Calculamos lo que te cuesta de verdad, te damos 3 planes
             (barato, calidad-precio y top) y te llevamos al mejor precio.
           </p>
@@ -36,11 +47,7 @@ export function Hero() {
               Planificar un viaje
             </ButtonLink>
           </div>
-          <p className="mt-6 text-[14px] text-muted">Tus números se quedan en tu dispositivo. No pedimos email ni cuenta.</p>
-        </div>
-
-        <div id="simulacion" className="scroll-mt-24 motion-safe:animate-rise motion-safe:[animation-delay:160ms]">
-          <LiveSimulation />
+          <p className="mt-6 text-[14px] text-muted">Tus números se quedan en tu dispositivo. No pedimos cuenta.</p>
         </div>
       </Container>
     </section>

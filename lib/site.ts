@@ -26,7 +26,7 @@ export const NAV = [
   { href: "/calculadoras", label: "¿Me da?" },
   { href: "/viajes", label: "Viajes" },
   { href: "/comparar", label: "Comparar ofertas" },
-  { href: "/tasador", label: "¿A cuánto lo pongo?" },
+  { href: "/tasador", label: "Tasador" },
 ] as const;
 
 /** Rutas de "tus cosas": se guardan solo en este dispositivo. */

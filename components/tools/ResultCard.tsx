@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
 import type { AffordabilityResult } from "@/lib/engine";
 import { mainReason } from "@/lib/explain/insight";
-import { formatEUR, formatMonths } from "@/lib/format";
+import { formatEUR, formatMonths, formatPct } from "@/lib/format";
 import { DEFAULT_PROFILE } from "@/lib/storage/profile";
 import { Card } from "@/components/ui/Card";
 import { ScoreScale } from "@/components/ui/ScoreScale";
 import { Stat } from "@/components/ui/Stat";
+import { IconWarning } from "@/components/ui/icons";
 import { cn } from "@/components/ui/cn";
 
 /**
@@ -84,6 +85,16 @@ export function ResultCard({
         <p className="text-[13px] font-medium text-muted">{eyebrow}</p>
       )}
       <ScoreScale score={result.score} verdict={result.verdict} muted={example} className="mt-2" />
+      {/* Un «sí» con el esfuerzo por encima de lo recomendable necesita el matiz a la vista */}
+      {!example && result.verdict === "yes" && result.flags.includes("over_guideline") && (
+        <p className="mt-4 flex items-start gap-2 rounded-xl bg-caution-50 px-3 py-2.5 text-[14px] leading-snug text-caution-700">
+          <IconWarning size={18} className="mt-px shrink-0" aria-hidden="true" />
+          <span>
+            <strong className="font-semibold">Te da, pero justo en esfuerzo:</strong> se lleva el {formatPct(result.effortRatio)} de tu
+            sueldo y lo recomendable es como mucho el {formatPct(result.guideline)}.
+          </span>
+        </p>
+      )}
       <p className="mt-5 text-[15px] leading-relaxed text-ink-2">
         {example ? (
           <>

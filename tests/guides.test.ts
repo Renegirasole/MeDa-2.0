@@ -47,3 +47,14 @@ test("coche: el reparto de gastos suma lo de la calculadora", async () => {
   assert.equal(Math.round(r.monthlyTotal), 460);
   assert.ok(carRow(16_000, 84).interest > carRow(16_000, 36).interest);
 });
+
+test("informe joven 2026: las cifras de la descripción siguen saliendo del motor", async () => {
+  const { reportRow, REPORT_PROFILES } = await import("../lib/report");
+  const { GUIDE_BY_SLUG } = await import("../lib/guides");
+  const plain = (s: string) => s.replace(/\s/g, " ");
+  const { formatEUR } = await import("../lib/format");
+  const y = reportRow(REPORT_PROFILES[1].net);
+  const d = plain(GUIDE_BY_SLUG["que-le-da-a-un-joven-2026"].description);
+  for (const v of [y.rent.maxRent, y.car.maxPrice, y.house.price]) assert.ok(d.includes(plain(formatEUR(v))), `${v} en la descripción`);
+  assert.ok(y.yearsToBuy > 13 && y.yearsToBuy < 14.5, "«casi 14 años»");
+});

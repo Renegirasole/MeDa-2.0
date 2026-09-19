@@ -18,7 +18,7 @@ import { Button, buttonClass } from "@/components/ui/Button";
 import { Disclosure } from "@/components/ui/Disclosure";
 import { PartnerLinks } from "@/components/ui/PartnerLinks";
 import { IconCheck, IconInfo, IconLock, IconStack } from "@/components/ui/icons";
-import { toneFor } from "@/components/ui/ScoreScale";
+import { MiniScale } from "@/components/ui/ScoreScale";
 import { cn } from "@/components/ui/cn";
 import { ProfileForm } from "./ProfileForm";
 import { PurchaseForm } from "./PurchaseForm";
@@ -114,7 +114,6 @@ export function AffordabilityCalculator({ slug }: { slug: CategorySlug }) {
       loan: deal && deal.termMonths > 0 ? deal.price - deal.downPayment : undefined,
     });
   }, [example, slug, profile, purchase, category.guideline, passes, recurring]);
-  const tone = toneFor(result.verdict);
 
   // Un cálculo cuenta como completado cuando la nota es con números propios y
   // lleva 2 s sin cambiar (así no se mide cada tecla). Una vez por visita.
@@ -278,7 +277,7 @@ export function AffordabilityCalculator({ slug }: { slug: CategorySlug }) {
         )}
       >
         <span className="flex items-center gap-2.5 text-[15px] font-medium">
-          <span aria-hidden="true" className={cn("size-2.5 rounded-full transition-colors duration-200", example ? "bg-night-muted" : tone.fill)} />
+          {!locked && <MiniScale score={result.score} verdict={result.verdict} muted={example} />}
           {example ? (
             <span>
               {locked ? "Tu nota" : "Ejemplo"} <span className="text-night-muted">· pon tus números</span>

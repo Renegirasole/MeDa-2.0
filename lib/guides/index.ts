@@ -43,6 +43,18 @@ export const GUIDES: Guide[] = [
     updated: "2026-09-19",
     minutes: 5,
   },
+  {
+    slug: "que-le-da-a-un-joven-2026",
+    pillar: "Dinero joven",
+    title: "¿Qué le da a un joven en 2026?",
+    teaser: "Con el sueldo medio de su edad: el alquiler, el coche y la casa que le dan, y cuántos años tarda en ahorrar la entrada.",
+    description:
+      "Informe MeDa 2026: con el sueldo medio de 25 a 34 años (INE), un alquiler de hasta 500 €, un coche de 9.900 € y una casa de 140.000 €, tras casi 14 años ahorrando la entrada.",
+    category: "alquilar-vivienda",
+    published: "2026-09-19",
+    updated: "2026-09-19",
+    minutes: 4,
+  },
 ];
 
 export const GUIDE_BY_SLUG = Object.fromEntries(GUIDES.map((g) => [g.slug, g])) as Record<string, Guide>;

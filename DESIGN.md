@@ -70,3 +70,13 @@ Con `prefers-reduced-motion` se quitan desplazamientos y se mantienen fundidos d
 ## Guías (modo lectura)
 
 `components/guides/Guide.tsx`: respuesta corta arriba (panel `night` con 3 cifras), cuerpo a 65 caracteres, tablas con `DataTable` (fila del caso destacada en `brand-50`), preguntas frecuentes con `Disclosure`, calculadora precargada en el lateral (y dentro de la respuesta en móvil). Autoría y fecha visibles; datos estructurados `Article` + `FAQPage`. Las cifras siempre salen del motor (`lib/guides/*`), nunca escritas a mano.
+
+## Cambios de la semana 6
+
+- **Home en móvil:** titular → simulación → texto y botones (rejilla con filas en escritorio). La nota se ve al entrar.
+- **Nota que cambia:** `animate-num` (150 ms, solo opacidad) al cambiar el valor; la cifra lleva `key` con la nota.
+- **Barra móvil:** `MiniScale` (tres zonas y el punto) en vez del punto de color. Oculta si la nota está bloqueada (experimento).
+- **Aviso ámbar:** «Te da, pero justo en esfuerzo» cuando el veredicto es «Sí» y hay `over_guideline`.
+- **Planes:** el recomendado ocupa 1,35 fr, se eleva (`shadow-raised`) y su cifra es mayor.
+- **Menú:** «Tasador» (el humor «¿A cuánto lo pongo?» queda como titular de la página).
+- **Hover:** Tailwind v4 ya limita `hover:` a `@media (hover: hover)`; no hace falta nada más.

@@ -55,6 +55,14 @@
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --animate-rise: rise 480ms var(--ease-out) both;
   --animate-fade: fade 200ms var(--ease-out) both;
+  /* La nota al cambiar: solo opacidad, 150 ms. Da sensación de cálculo sin frenar. */
+  --animate-num: num 150ms var(--ease-out) both;
+}
+
+@keyframes num {
+  from {
+    opacity: 0.35;
+  }
 }
 
 @keyframes rise {
