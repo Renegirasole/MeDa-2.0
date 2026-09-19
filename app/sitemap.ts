@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { CATEGORIES } from "@/lib/data/categories";
 import { APPRAISALS } from "@/lib/data/appraisal";
+import { GUIDES } from "@/lib/guides";
 import { SITE } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -13,7 +14,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/comparar", priority: 0.8 },
     { path: "/tasador", priority: 0.7 },
     ...APPRAISALS.map((a) => ({ path: `/tasador/${a.slug}`, priority: 0.7 })),
+    { path: "/guias", priority: 0.7 },
+    ...GUIDES.map((g) => ({ path: `/guias/${g.slug}`, priority: 0.8 })),
     { path: "/combinar", priority: 0.5 },
+    { path: "/quienes-somos", priority: 0.5 },
     { path: "/como-calculamos", priority: 0.5 },
     { path: "/anunciate", priority: 0.3 },
   ];

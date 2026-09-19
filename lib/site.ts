@@ -35,8 +35,22 @@ export const PERSONAL_NAV = [
   { href: "/combinar", label: "Mi lista", description: "Todo lo que quieres, junto" },
 ] as const;
 
+/**
+ * Quién hay detrás (E-E-A-T: en finanzas, Google y la gente quieren saberlo).
+ * `sameAs`: perfiles públicos (LinkedIn, X…) cuando los queráis enlazar.
+ */
+export const TEAM: ReadonlyArray<{ name: string; role: string; sameAs?: readonly string[] }> = [
+  { name: "René", role: "Cofundador" },
+  { name: "Alberto", role: "Cofundador" },
+];
+
+/** Última revisión de las reglas y los textos (formato ISO). Cambiadla cuando revisáis algo. */
+export const CONTENT_REVIEWED = "2026-09-19";
+
 /** Información y transparencia. */
 export const INFO_NAV = [
+  { href: "/quienes-somos", label: "Quiénes somos" },
+  { href: "/guias", label: "Guías" },
   { href: "/como-calculamos", label: "Cómo calculamos" },
   { href: "/anunciate", label: "Anúnciate en MeDa" },
 ] as const;

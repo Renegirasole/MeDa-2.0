@@ -13,3 +13,7 @@ export const formatMonths = (v: number) => {
   const n = upToOne.format(Math.max(0, v));
   return `${n} ${v === 1 ? "mes" : "meses"}`;
 };
+
+const longDate = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+/** "2026-09-19" → "19 de septiembre de 2026" */
+export const formatDate = (iso: string) => longDate.format(new Date(`${iso}T00:00:00Z`));

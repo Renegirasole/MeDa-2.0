@@ -6,6 +6,7 @@ import { buildPlans, evaluateOne, maxAffordable, PASSING_SCORE, type FinancialPr
 import { CATEGORY_BY_SLUG, type CategorySlug } from "@/lib/data/categories";
 import { dealLinks } from "@/lib/affiliates";
 import { decodeShare } from "@/lib/share";
+import { makeScoreCard } from "@/lib/scorecard";
 import { track } from "@/lib/analytics";
 import { secondaryNotes } from "@/lib/explain/insight";
 import { useCombo, useProfile } from "@/lib/storage/hooks";
@@ -226,7 +227,13 @@ export function AffordabilityCalculator({ slug }: { slug: CategorySlug }) {
               <p className="font-semibold text-ink">Guárdalo o compártelo</p>
               <p className="mt-1 text-[14px] leading-snug text-muted">Sin cuenta: todo se queda en tu dispositivo o en el enlace.</p>
             </div>
-            <ShareButton path={`/calculadoras/${slug}`} title={category.question} purchase={purchase} profile={profile} />
+            <ShareButton
+              path={`/calculadoras/${slug}`}
+              title={category.question}
+              purchase={purchase}
+              profile={profile}
+              card={example ? null : makeScoreCard(slug, result.score, recurring ? purchase.monthlyFee : purchase.price)}
+            />
             <div className="border-t border-line pt-4">
               {added ? (
                 <p className="flex min-h-11 items-center gap-2 text-[15px] text-ink">

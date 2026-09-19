@@ -59,3 +59,14 @@ Con `prefers-reduced-motion` se quitan desplazamientos y se mantienen fundidos d
 - `cn()` no fusiona clases: para ocultar según el ancho usa `max-sm:hidden` / `max-md:hidden`, no `hidden sm:flex`, sobre componentes cuya clase base ya fija `display`.
 - En rejillas de una columna, `grid-cols-1` (= `minmax(0,1fr)`) para que los campos no ensanchen la página.
 - Los `<input>` llevan `w-full min-w-0`.
+
+## Piezas para compartir (semana 3)
+
+- **Imagen de la nota** (`app/api/nota/route.tsx`): 1080×1920 para stories (panel `night`, zona segura: 260 px arriba y 340 px abajo) y 1200×630 para la vista previa de `/nota`. Solo compra, importe y nota (`lib/scorecard.ts`); nunca el perfil.
+- **Carrusel** (`app/api/carrusel/route.tsx`): 1080×1350, fondo `canvas`, una cifra grande por diapositiva, portada y cierre en `night`.
+- Satori no lee variables CSS: los hex de `lib/og/theme.tsx` son el espejo de los tokens. Fuente: Geist desde `assets/fonts` (OFL).
+- Cifras grandes en imágenes: interletraje negativo moderado (≈ −3 % del tamaño) o el punto de los miles se pega.
+
+## Guías (modo lectura)
+
+`components/guides/Guide.tsx`: respuesta corta arriba (panel `night` con 3 cifras), cuerpo a 65 caracteres, tablas con `DataTable` (fila del caso destacada en `brand-50`), preguntas frecuentes con `Disclosure`, calculadora precargada en el lateral (y dentro de la respuesta en móvil). Autoría y fecha visibles; datos estructurados `Article` + `FAQPage`. Las cifras siempre salen del motor (`lib/guides/*`), nunca escritas a mano.

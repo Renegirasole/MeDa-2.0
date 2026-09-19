@@ -10,6 +10,8 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   experimental: { optimizePackageImports: ["@phosphor-icons/react"] },
+  /** Las imágenes generadas (nota, carrusel) leen Geist del disco: que viaje con cada función. */
+  outputFileTracingIncludes: { "/api/**": ["./assets/fonts/*.ttf"] },
   /** Dominio canónico: todo lo demás redirige a medaono.com. */
   async redirects() {
     return ["www.medaono.com", "meda-five.vercel.app"].map((host) => ({
