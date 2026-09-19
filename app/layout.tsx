@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { SITE } from "@/lib/site";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { PageviewTracker } from "@/components/layout/PageviewTracker";
 import "./globals.css";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
@@ -77,6 +78,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <Footer />
         {/* Analítica sin cookies: visitas y eventos de lib/analytics.ts. */}
         <Analytics />
+        <PageviewTracker />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </body>
     </html>

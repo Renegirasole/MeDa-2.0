@@ -17,25 +17,33 @@ export interface Faq {
 
 const authors = TEAM.map((p) => p.name).join(" y ");
 
+/** Lo que la plantilla necesita de una guía (también sirve para las páginas programáticas). */
+export type GuideMeta = Pick<Guide, "title" | "description" | "published" | "updated" | "minutes">;
+
 /**
  * Plantilla de guía (modo lectura): respuesta arriba, cuerpo a 65 caracteres,
  * calculadora siempre a mano y datos estructurados de artículo y preguntas frecuentes.
  */
 export function GuideShell({
   guide,
+  path,
+  crumbs = [{ href: "/guias", label: "Guías" }],
   answer,
   cta,
   faqs,
   children,
 }: {
-  guide: Guide;
+  guide: GuideMeta;
+  /** Ruta de la página, para los datos estructurados */
+  path: string;
+  crumbs?: { href: string; label: string }[];
   /** «La respuesta corta»: lo que alguien con prisa se lleva */
   answer: ReactNode;
   cta: { href: string; label: string; note: string };
   faqs: Faq[];
   children: ReactNode;
 }) {
-  const url = `${SITE.url}/guias/${guide.slug}`;
+  const url = `${SITE.url}${path}`;
   const ld = [
     {
       "@context": "https://schema.org",
@@ -59,7 +67,7 @@ export function GuideShell({
 
   return (
     <>
-      <PageHeader title={guide.title} crumbs={[{ href: "/guias", label: "Guías" }]} />
+      <PageHeader title={guide.title} crumbs={crumbs} />
       <Container className="-mt-4 pb-24 md:-mt-6">
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-muted">
           <span>

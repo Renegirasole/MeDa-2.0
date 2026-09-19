@@ -56,6 +56,7 @@ export default function MortgageSalaryGuide() {
   return (
     <GuideShell
       guide={guide}
+      path={`/guias/${guide.slug}`}
       faqs={faqs}
       cta={{
         href,
@@ -159,7 +160,11 @@ export default function MortgageSalaryGuide() {
         rows={LOAN_TABLE.map((loan) => {
           const r30 = mortgageRow(loan, 30);
           const r25 = mortgageRow(loan, 25);
-          return [formatEUR(loan), formatEUR(r30.payment), formatEUR(r30.minIncomeEffort), formatEUR(r25.payment), formatEUR(r25.minIncomeEffort), formatEUR(r30.cashNeeded)];
+          return [
+            <Link key={loan} href={`/cuanto-ganar-para/hipoteca-${loan}`} className="underline underline-offset-4 hover:text-brand-700">
+              {formatEUR(loan)}
+            </Link>,
+            formatEUR(r30.payment), formatEUR(r30.minIncomeEffort), formatEUR(r25.payment), formatEUR(r25.minIncomeEffort), formatEUR(r30.cashNeeded)];
         })}
       />
 

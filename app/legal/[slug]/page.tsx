@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { SITE } from "@/lib/site";
+
+const POSTHOG = Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY);
 import { PageHeader } from "@/components/pages/PageHeader";
 import { Container } from "@/components/ui/Section";
 
@@ -45,8 +47,14 @@ const PAGES: Record<string, { title: string; body: ReactNode }> = {
           (sin nombre, email ni identificadores) para redactar la explicación. No se guardan asociadas a ti.
         </p>
         <p>
-          Cuando compartes un resultado, los datos viajan dentro del propio enlace, en una parte que los navegadores no
-          envían al servidor. Por defecto, el enlace no incluye tus ingresos ni tus ahorros.
+          Cuando compartes un resultado, por defecto el enlace solo lleva la compra, su precio y la nota, nunca tus ingresos
+          ni tus ahorros. Si eliges incluirlos, viajan dentro del propio enlace, en una parte que los navegadores no envían al
+          servidor. La imagen de «Descargar mi nota» tampoco lleva datos tuyos: solo la compra y la nota.
+        </p>
+        <p>
+          Medimos la audiencia de forma agregada y sin cookies con Vercel Web Analytics
+          {POSTHOG && " y PostHog (servidores en la Unión Europea)"}: páginas vistas, de qué web llegas y acciones como
+          «cálculo completado», sin tus cifras ni ningún dato que te identifique. No se crean perfiles de persona.
         </p>
         {SITE.adsenseClient && (
           <p>
@@ -84,8 +92,8 @@ const PAGES: Record<string, { title: string; body: ReactNode }> = {
           recordar tus datos en este dispositivo, algo técnicamente necesario para que la herramienta funcione sin cuenta.
         </p>
         <p>
-          Si en el futuro añadimos medición de audiencia, usaremos una herramienta sin cookies o te pediremos permiso
-          antes.
+          La medición de audiencia (Vercel Web Analytics{POSTHOG && " y PostHog"}) funciona sin cookies y sin guardar nada en
+          tu navegador. Si algún día usamos una herramienta que las necesite, te pediremos permiso antes.
         </p>
       </>
     ),

@@ -8,6 +8,7 @@ import { dealLinks } from "@/lib/affiliates";
 import { decodeShare } from "@/lib/share";
 import { makeScoreCard } from "@/lib/scorecard";
 import { track } from "@/lib/analytics";
+import { useVariant } from "@/lib/experiments";
 import { secondaryNotes } from "@/lib/explain/insight";
 import { useCombo, useProfile } from "@/lib/storage/hooks";
 import { VERDICT_COPY } from "@/lib/copy";
@@ -51,12 +52,22 @@ export function AffordabilityCalculator({ slug }: { slug: CategorySlug }) {
   const [purchase, setPurchaseState] = useState<PurchaseInput>(category.defaults);
   // Sin números propios (ni guardados ni compartidos) la nota es de ejemplo, no del usuario.
   const example = !sharedProfile && !(hydrated && saved);
+  // Experimento nota_ejemplo: cómo se enseña la nota mientras no hay números tuyos.
+  const noteVariant = useVariant("nota_ejemplo");
+  const locked = example && noteVariant === "bloqueada";
+  const seen = useRef(false);
+  useEffect(() => {
+    // Exposición: una vez por visita, con la variante sorteada y sabiendo si hay números propios.
+    if (!hydrated || !noteVariant || seen.current) return;
+    seen.current = true;
+    if (example) track("experimento_visto", { experimento: "nota_ejemplo", variante: noteVariant, categoria: slug });
+  }, [hydrated, example, noteVariant, slug]);
 
   const started = useRef(false);
   function markStarted() {
     if (started.current) return;
     started.current = true;
-    track("calculo_empezado", { categoria: slug });
+    track("calculo_empezado", { categoria: slug, exp_nota_ejemplo: noteVariant ?? "sin_sortear" });
   }
   function setPurchase(p: PurchaseInput) {
     markStarted();
@@ -111,7 +122,7 @@ export function AffordabilityCalculator({ slug }: { slug: CategorySlug }) {
     if (example || completed.current) return;
     const t = window.setTimeout(() => {
       completed.current = true;
-      track("calculo_completado", { categoria: slug, veredicto: result.verdict, nota: Math.round(result.score) });
+      track("calculo_completado", { categoria: slug, veredicto: result.verdict, nota: Math.round(result.score), exp_nota_ejemplo: noteVariant ?? "sin_sortear" });
     }, 2000);
     return () => window.clearTimeout(t);
   }, [example, result, slug]);
@@ -157,7 +168,7 @@ export function AffordabilityCalculator({ slug }: { slug: CategorySlug }) {
         </div>
 
         <div className="lg:sticky lg:top-24">
-          <ResultCard id="resultado" result={result} example={example}>
+          <ResultCard id="resultado" result={result} example={example} locked={locked}>
             <a href="#por-que" className={buttonClass("secondary", "md", "sm:flex-1")}>
               Por qué esta nota
             </a>
@@ -268,7 +279,7 @@ export function AffordabilityCalculator({ slug }: { slug: CategorySlug }) {
           <span aria-hidden="true" className={cn("size-2.5 rounded-full transition-colors duration-200", example ? "bg-night-muted" : tone.fill)} />
           {example ? (
             <span>
-              Ejemplo <span className="text-night-muted">· pon tus números</span>
+              {locked ? "Tu nota" : "Ejemplo"} <span className="text-night-muted">· pon tus números</span>
             </span>
           ) : (
             <span>

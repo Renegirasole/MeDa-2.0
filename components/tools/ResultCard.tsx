@@ -17,6 +17,7 @@ export function ResultCard({
   id,
   eyebrow = "Tu resultado",
   example = false,
+  locked = false,
   children,
   className,
 }: {
@@ -25,11 +26,53 @@ export function ResultCard({
   eyebrow?: string;
   /** Calculado con números de ejemplo: la nota va en gris y se pide poner los tuyos */
   example?: boolean;
+  /** Con `example`: no enseña ninguna nota hasta que pones tus números (experimento nota_ejemplo) */
+  locked?: boolean;
   /** Acciones bajo el resultado */
   children?: ReactNode;
   className?: string;
 }) {
   const rest = result.monthlyTotal - result.monthlyPayment;
+  const costStat = (
+    <Stat
+      lead
+      label="Coste real al mes"
+      value={formatEUR(result.monthlyTotal)}
+      hint={result.monthlyPayment > 0 && rest > 0 ? `${formatEUR(result.monthlyPayment)} cuota + ${formatEUR(rest)} gastos` : undefined}
+    />
+  );
+
+  if (example && locked) {
+    return (
+      <Card id={id} className={cn("scroll-mt-24 p-5 sm:p-7", className)} aria-live="polite">
+        <p className="text-[13px] font-medium text-muted">{eyebrow}</p>
+        <div className="mt-2 flex items-end justify-between gap-4">
+          <p className="text-2xl font-semibold tracking-[-0.02em] text-muted md:text-[1.75rem]">Tu nota</p>
+          <p className="num flex items-baseline gap-1 leading-none text-line-strong">
+            <span className="text-[3.5rem] font-semibold tracking-[-0.05em] md:text-[4rem]">–</span>
+            <span className="text-lg text-muted">/10</span>
+          </p>
+        </div>
+        <div aria-hidden="true" className="mt-5 flex h-2.5 gap-[3px] px-2 py-1">
+          <span className="h-full grow-[5] rounded-l-full bg-subtle" />
+          <span className="h-full grow-[2] bg-subtle" />
+          <span className="h-full grow-[3] rounded-r-full bg-subtle" />
+        </div>
+        <p className="mt-5 text-[15px] leading-relaxed text-ink-2">
+          <a href="#paso-1" className="font-medium text-ink underline underline-offset-4 hover:text-brand-700">
+            Pon tus ingresos, gastos y ahorros
+          </a>{" "}
+          en el paso 1 y te decimos si te da, con tu nota de 0 a 10.
+        </p>
+        <dl className="mt-6 grid grid-cols-2 gap-x-5 gap-y-5 border-t border-line pt-6">
+          {costStat}
+          <Stat label="Sale de tus ahorros" value={formatEUR(result.cashOutlay)} />
+        </dl>
+        {children && <div className="mt-6 flex flex-col gap-2 border-t border-line pt-5 sm:flex-row sm:flex-wrap">{children}</div>}
+      </Card>
+    );
+  }
+
   return (
     <Card id={id} className={cn("scroll-mt-24 p-5 sm:p-7", className)} aria-live="polite">
       {example ? (
@@ -55,12 +98,7 @@ export function ResultCard({
       </p>
 
       <dl className="mt-6 grid grid-cols-2 gap-x-5 gap-y-5 border-t border-line pt-6">
-        <Stat
-          lead
-          label="Coste real al mes"
-          value={formatEUR(result.monthlyTotal)}
-          hint={result.monthlyPayment > 0 && rest > 0 ? `${formatEUR(result.monthlyPayment)} cuota + ${formatEUR(rest)} gastos` : undefined}
-        />
+        {costStat}
         <Stat
           lead
           label={result.marginAfter >= 0 ? "Te queda libre al mes" : "Te falta al mes"}

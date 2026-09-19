@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { GUIDES, type Pillar } from "@/lib/guides";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatEUR } from "@/lib/format";
+import { CAR_SALARIES, carSlug, MORTGAGE_AMOUNTS, mortgageSlug, RENT_SALARIES, rentSlug } from "@/lib/programmatic";
 import { PageHeader } from "@/components/pages/PageHeader";
 import { Container } from "@/components/ui/Section";
 import { ArrowGlyph } from "@/components/ui/Button";
@@ -14,6 +15,22 @@ export const metadata: Metadata = {
 };
 
 const PILLARS: Pillar[] = ["Vivienda", "Coche y moto", "Dinero joven"];
+
+/** Respuestas rápidas (páginas programáticas): una por cifra, enlazadas desde aquí para que Google las encuentre. */
+const QUICK = [
+  {
+    title: "¿Cuánto ganar para una hipoteca de…?",
+    links: MORTGAGE_AMOUNTS.map((v) => ({ href: `/cuanto-ganar-para/${mortgageSlug(v)}`, label: formatEUR(v) })),
+  },
+  {
+    title: "¿Qué coche puedo comprar cobrando…?",
+    links: CAR_SALARIES.map((v) => ({ href: `/que-puedo-permitirme/${carSlug(v)}`, label: formatEUR(v) })),
+  },
+  {
+    title: "¿Cuánto alquiler puedo pagar cobrando…?",
+    links: RENT_SALARIES.map((v) => ({ href: `/alquiler-maximo/${rentSlug(v)}`, label: formatEUR(v) })),
+  },
+];
 
 export default function GuidesPage() {
   const groups = PILLARS.map((p) => ({ pillar: p, guides: GUIDES.filter((g) => g.pillar === p) })).filter((g) => g.guides.length > 0);
@@ -56,6 +73,31 @@ export default function GuidesPage() {
               </ul>
             </section>
           ))}
+
+          <section aria-labelledby="rapidas" className="border-t border-line pt-8">
+            <h2 id="rapidas" className="text-[13px] font-medium text-brand-700">
+              Respuestas rápidas
+            </h2>
+            <div className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-3">
+              {QUICK.map((q) => (
+                <div key={q.title}>
+                  <h3 className="text-lg font-semibold tracking-[-0.02em] text-ink">{q.title}</h3>
+                  <ul className="mt-3 flex flex-wrap gap-2">
+                    {q.links.map((l) => (
+                      <li key={l.href}>
+                        <Link
+                          href={l.href}
+                          className="num inline-flex min-h-11 items-center rounded-full border border-line bg-surface px-3.5 text-[14px] text-ink-2 transition-colors duration-150 hover:border-ink/40 hover:text-ink"
+                        >
+                          {l.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       </Container>
     </>
