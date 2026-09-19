@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { buildPlans, evaluateOne, PASSING_SCORE, type FinancialProfile, type PurchaseInput } from "@/lib/engine";
+import { buildPlans, evaluateOne, maxAffordable, PASSING_SCORE, type FinancialProfile, type PurchaseInput } from "@/lib/engine";
 import { CATEGORY_BY_SLUG, type CategorySlug } from "@/lib/data/categories";
 import { dealLinks } from "@/lib/affiliates";
 import { decodeShare } from "@/lib/share";
@@ -90,7 +90,17 @@ export function AffordabilityCalculator({ slug }: { slug: CategorySlug }) {
   const passes = result.score >= PASSING_SCORE;
   const anyPlanPasses = recommendedTier(plans) !== null;
   const notes = secondaryNotes(result);
-  const links = dealLinks(slug);
+  // Los partners abren con lo que ya sabemos: tope que te da e importe a financiar.
+  const links = useMemo(() => {
+    if (example) return dealLinks(slug);
+    const max = maxAffordable(profile, purchase, category.guideline);
+    const deal = passes ? purchase : max?.purchase;
+    const cap = max ? (recurring ? max.purchase.monthlyFee : max.purchase.price) : undefined;
+    return dealLinks(slug, {
+      budget: passes ? Math.max(cap ?? 0, recurring ? purchase.monthlyFee : purchase.price) : cap,
+      loan: deal && deal.termMonths > 0 ? deal.price - deal.downPayment : undefined,
+    });
+  }, [example, slug, profile, purchase, category.guideline, passes, recurring]);
   const tone = toneFor(result.verdict);
 
   // Un cálculo cuenta como completado cuando la nota es con números propios y
