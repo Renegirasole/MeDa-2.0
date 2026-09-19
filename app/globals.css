@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+/*
+ * MeDa V2 — tokens del sistema de diseño.
+ * Regla: los componentes nunca usan hex sueltos, solo estos nombres.
+ * Documentado en DESIGN.md.
+ */
+@theme {
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+
+  /* Superficies: papel con un punto de verde, nunca gris de banco */
+  --color-canvas: #f5f6f3;
+  --color-surface: #ffffff;
+  --color-subtle: #eef0ec;
+  --color-line: #e1e4df;
+  --color-line-strong: #c9cfc7;
+
+  /* Texto */
+  --color-ink: #0d1712;
+  --color-ink-2: #36413b;
+  --color-muted: #5f6a63;
+
+  /* Verde MeDa: el único acento */
+  --color-brand-50: #eaf4ee;
+  --color-brand-100: #d3e9dc;
+  --color-brand-300: #7fd1a4;
+  --color-brand-500: #16895a;
+  --color-brand-600: #0e7a4e;
+  --color-brand-700: #0a5f3c;
+
+  /* Estados: solo para veredictos y avisos */
+  --color-caution-50: #faf0dc;
+  --color-caution-300: #f2c46b;
+  --color-caution-500: #d4942a;
+  --color-caution-700: #855100;
+  --color-alert-50: #fbe9e6;
+  --color-alert-300: #ff9c88;
+  --color-alert-500: #d65a42;
+  --color-alert-700: #a62a1e;
+
+  /* Panel oscuro */
+  --color-night: #0d1712;
+  --color-night-2: #17231c;
+  --color-night-line: #2a3830;
+  --color-night-muted: #a4b0a8;
+
+  --radius-card: 1.25rem;
+  --radius-control: 0.75rem;
+
+  --shadow-card: 0 1px 2px rgb(13 23 18 / 0.04), 0 8px 24px -12px rgb(13 23 18 / 0.1);
+  --shadow-raised: 0 1px 2px rgb(13 23 18 / 0.05), 0 24px 48px -24px rgb(13 23 18 / 0.22);
+
+  /* Movimiento: curvas con carácter, duraciones cortas */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --animate-rise: rise 480ms var(--ease-out) both;
+  --animate-fade: fade 200ms var(--ease-out) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    scroll-padding-top: 5.5rem;
+  }
+  body {
+    @apply bg-canvas font-sans text-ink antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+  ::selection {
+    background: var(--color-brand-100);
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+}
+
+@layer components {
+  /* Cifras: siempre tabulares para que no bailen al teclear */
+  .num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum", "ss01";
+  }
+
+  /* Entrada escalonada de la primera vista. Nunca bloquea la interacción. */
+  .stagger > * {
+    animation: var(--animate-rise);
+  }
+  .stagger > :nth-child(2) {
+    animation-delay: 50ms;
+  }
+  .stagger > :nth-child(3) {
+    animation-delay: 100ms;
+  }
+  .stagger > :nth-child(4) {
+    animation-delay: 150ms;
+  }
+  .stagger > :nth-child(n + 5) {
+    animation-delay: 200ms;
+  }
+
+  /* Divulgación progresiva: el contenido entra sin animar la altura */
+  details[open] > .disclosure-body {
+    animation: var(--animate-fade);
+  }
+  details[open] > summary .disclosure-chevron {
+    transform: rotate(180deg);
+  }
+}
+
+/* Menos movimiento no es cero: fuera desplazamientos, se quedan los fundidos de color */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-property: color, background-color, border-color, opacity !important;
+  }
+}
