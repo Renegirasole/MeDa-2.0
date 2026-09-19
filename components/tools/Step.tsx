@@ -22,7 +22,7 @@ export function Step({
       <section aria-labelledby={id}>
         <header className="mb-6 flex items-center gap-3">
           <span className="num flex size-7 shrink-0 items-center justify-center rounded-full bg-ink text-[13px] font-semibold text-white">{n}</span>
-          <h2 id={id} className="flex-1 text-lg font-semibold tracking-[-0.01em] text-ink">
+          <h2 id={id} className="flex-1 scroll-mt-28 text-lg font-semibold tracking-[-0.01em] text-ink">
             {title}
           </h2>
           {aside}

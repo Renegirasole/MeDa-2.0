@@ -1,5 +1,6 @@
-const eur = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
-const num = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 });
+// "always": en es-ES, por defecto 3400 sale sin punto y 16.805 con él. Siempre agrupado.
+const eur = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0, useGrouping: "always" });
+const num = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0, useGrouping: "always" });
 const pct = new Intl.NumberFormat("es-ES", { style: "percent", maximumFractionDigits: 0 });
 const one = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const upToOne = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 1 });

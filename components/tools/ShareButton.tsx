@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import type { FinancialProfile, PurchaseInput } from "@/lib/engine";
 import { encodeShare } from "@/lib/share";
+import { track } from "@/lib/analytics";
 import { Button } from "@/components/ui/Button";
 import { IconCheck, IconShare } from "@/components/ui/icons";
 
@@ -27,6 +28,7 @@ export function ShareButton({ path, title, purchase, profile }: Props) {
     if (typeof navigator.share === "function") {
       try {
         await navigator.share({ title: "MeDa", text, url });
+        track("compartir", { metodo: "nativo", con_datos: includeProfile, origen: path });
         return;
       } catch {
         // Cancelado o no disponible: probamos a copiar.
@@ -34,6 +36,7 @@ export function ShareButton({ path, title, purchase, profile }: Props) {
     }
     try {
       await navigator.clipboard.writeText(url);
+      track("compartir", { metodo: "copiar", con_datos: includeProfile, origen: path });
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {

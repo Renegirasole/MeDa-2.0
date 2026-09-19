@@ -140,7 +140,7 @@ export function TravelPlanner({ initial }: { initial: TripQuery }) {
           </p>
         </div>
         {recommended ? (
-          <PartnerLinks links={travelLinks(dest.name)} title="Reserva al mejor precio" />
+          <PartnerLinks links={travelLinks(dest.name)} title="Reserva al mejor precio" context="viajes" />
         ) : (
           <p className="text-[15px] leading-relaxed text-ink-2">
             Ningún plan te da ahora mismo, así que no te mandamos a reservar. Prueba menos noches u otro destino.

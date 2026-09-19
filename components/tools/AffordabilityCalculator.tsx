@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { buildPlans, evaluateOne, PASSING_SCORE, type FinancialProfile, type PurchaseInput } from "@/lib/engine";
 import { CATEGORY_BY_SLUG, type CategorySlug } from "@/lib/data/categories";
 import { dealLinks } from "@/lib/affiliates";
 import { decodeShare } from "@/lib/share";
+import { track } from "@/lib/analytics";
 import { secondaryNotes } from "@/lib/explain/insight";
 import { useCombo, useProfile } from "@/lib/storage/hooks";
 import { VERDICT_COPY } from "@/lib/copy";
@@ -43,17 +44,30 @@ function Block({ id, eyebrow, title, children }: { id: string; eyebrow: string; 
 export function AffordabilityCalculator({ slug }: { slug: CategorySlug }) {
   const category = CATEGORY_BY_SLUG[slug];
 
-  const [storedProfile, setStoredProfile] = useProfile();
+  const [storedProfile, setStoredProfile, { hydrated, saved }] = useProfile();
   const [sharedProfile, setSharedProfile] = useState<FinancialProfile | null>(null);
   const profile = sharedProfile ?? storedProfile;
-  const [purchase, setPurchase] = useState<PurchaseInput>(category.defaults);
+  const [purchase, setPurchaseState] = useState<PurchaseInput>(category.defaults);
+  // Sin números propios (ni guardados ni compartidos) la nota es de ejemplo, no del usuario.
+  const example = !sharedProfile && !(hydrated && saved);
+
+  const started = useRef(false);
+  function markStarted() {
+    if (started.current) return;
+    started.current = true;
+    track("calculo_empezado", { categoria: slug });
+  }
+  function setPurchase(p: PurchaseInput) {
+    markStarted();
+    setPurchaseState(p);
+  }
 
   // Enlaces compartidos: /calculadoras/coche#s=<token>
   useEffect(() => {
     const token = new URLSearchParams(window.location.hash.slice(1)).get("s");
     const shared = decodeShare(token);
     if (!shared) return;
-    setPurchase(shared.purchase);
+    setPurchaseState(shared.purchase);
     if (shared.profile) setSharedProfile(shared.profile);
     window.history.replaceState(null, "", window.location.pathname);
   }, []);
@@ -79,7 +93,20 @@ export function AffordabilityCalculator({ slug }: { slug: CategorySlug }) {
   const links = dealLinks(slug);
   const tone = toneFor(result.verdict);
 
+  // Un cálculo cuenta como completado cuando la nota es con números propios y
+  // lleva 2 s sin cambiar (así no se mide cada tecla). Una vez por visita.
+  const completed = useRef(false);
+  useEffect(() => {
+    if (example || completed.current) return;
+    const t = window.setTimeout(() => {
+      completed.current = true;
+      track("calculo_completado", { categoria: slug, veredicto: result.verdict, nota: Math.round(result.score) });
+    }, 2000);
+    return () => window.clearTimeout(t);
+  }, [example, result, slug]);
+
   function updateProfile(p: FinancialProfile) {
+    markStarted();
     setSharedProfile(null);
     setStoredProfile(p);
   }
@@ -119,7 +146,7 @@ export function AffordabilityCalculator({ slug }: { slug: CategorySlug }) {
         </div>
 
         <div className="lg:sticky lg:top-24">
-          <ResultCard id="resultado" result={result}>
+          <ResultCard id="resultado" result={result} example={example}>
             <a href="#por-que" className={buttonClass("secondary", "md", "sm:flex-1")}>
               Por qué esta nota
             </a>
@@ -159,12 +186,23 @@ export function AffordabilityCalculator({ slug }: { slug: CategorySlug }) {
       </Block>
 
       {/* 4. Siguiente paso */}
-      <Block id="siguiente" eyebrow="Siguiente paso" title={passes ? "Te da. Ahora, al mejor precio" : anyPlanPasses ? "Así, no. Pero hay camino" : "Todavía no. Así llegas"}>
+      <Block id="siguiente" eyebrow="Siguiente paso" title={example ? "Tu siguiente paso" : passes ? "Te da. Ahora, al mejor precio" : anyPlanPasses ? "Así, no. Pero hay camino" : "Todavía no. Así llegas"}>
         <div className="grid gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-16">
           <div className="flex flex-col gap-8">
-            <GoalBlock profile={profile} purchase={purchase} guideline={category.guideline} result={result} recurring={recurring} />
-            {anyPlanPasses ? (
-              <PartnerLinks links={links} title={passes ? "Dónde buscar el mejor precio" : "Busca opciones más asequibles"} />
+            {!example && <GoalBlock profile={profile} purchase={purchase} guideline={category.guideline} result={result} recurring={recurring} />}
+            {example ? (
+              <p className="text-[15px] leading-relaxed text-ink-2">
+                <a href="#paso-1" className="font-medium text-ink underline underline-offset-4 hover:text-brand-700">
+                  Pon tus números
+                </a>{" "}
+                y te diremos si te da y dónde buscar el mejor precio.
+              </p>
+            ) : anyPlanPasses ? (
+              <PartnerLinks
+                links={links}
+                context={slug}
+                title={passes ? "Dónde buscar el mejor precio" : "Busca opciones más asequibles"}
+              />
             ) : (
               <p className="text-[15px] leading-relaxed text-ink-2">
                 Como ahora mismo ningún plan te da, no te mandamos a comprar. Vuelve cuando cambien tus números: los guardamos en
@@ -210,11 +248,17 @@ export function AffordabilityCalculator({ slug }: { slug: CategorySlug }) {
         )}
       >
         <span className="flex items-center gap-2.5 text-[15px] font-medium">
-          <span aria-hidden="true" className={cn("size-2.5 rounded-full transition-colors duration-200", tone.fill)} />
-          <span>
-            <span className="num font-semibold">{formatScore(result.score)}</span>
-            <span className="text-night-muted">/10</span> · {VERDICT_COPY[result.verdict].label}
-          </span>
+          <span aria-hidden="true" className={cn("size-2.5 rounded-full transition-colors duration-200", example ? "bg-night-muted" : tone.fill)} />
+          {example ? (
+            <span>
+              Ejemplo <span className="text-night-muted">· pon tus números</span>
+            </span>
+          ) : (
+            <span>
+              <span className="num font-semibold">{formatScore(result.score)}</span>
+              <span className="text-night-muted">/10</span> · {VERDICT_COPY[result.verdict].label}
+            </span>
+          )}
         </span>
         <span className="text-[14px] text-night-muted">Ver resultado</span>
       </a>

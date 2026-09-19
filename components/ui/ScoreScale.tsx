@@ -39,21 +39,23 @@ interface Props {
   size?: "md" | "lg";
   /** Muestra los nombres de las zonas bajo la regla */
   labels?: boolean;
+  /** Nota calculada con datos de ejemplo: se pinta en gris para que no parezca tuya */
+  muted?: boolean;
   className?: string;
 }
 
 /** La Escala MeDa: nota, veredicto y dónde caes respecto a los umbrales. */
-export function ScoreScale({ score, verdict, tone = "light", size = "lg", labels = true, className }: Props) {
+export function ScoreScale({ score, verdict, tone = "light", size = "lg", labels = true, muted = false, className }: Props) {
   const t = toneFor(verdict);
   const night = tone === "night";
   const clamped = Math.min(10, Math.max(0, score));
   return (
-    <div className={className} role="img" aria-label={`Nota ${formatScore(score)} sobre 10: ${VERDICT_COPY[verdict].label}`}>
+    <div className={className} role="img" aria-label={`${muted ? "Ejemplo: " : ""}Nota ${formatScore(score)} sobre 10: ${VERDICT_COPY[verdict].label}`}>
       <div className="flex items-end justify-between gap-4">
-        <p className={cn("font-semibold tracking-[-0.02em]", size === "lg" ? "text-2xl md:text-[1.75rem]" : "text-xl", night ? t.textNight : t.text)}>
+        <p className={cn("font-semibold tracking-[-0.02em]", size === "lg" ? "text-2xl md:text-[1.75rem]" : "text-xl", "transition-colors duration-200", muted ? "text-muted" : night ? t.textNight : t.text)}>
           {VERDICT_COPY[verdict].label}
         </p>
-        <p className={cn("num flex items-baseline gap-1 leading-none", night ? "text-white" : "text-ink")}>
+        <p className={cn("num flex items-baseline gap-1 leading-none transition-colors duration-200", muted ? "text-muted" : night ? "text-white" : "text-ink")}>
           <span className={cn("font-semibold tracking-[-0.05em]", size === "lg" ? "text-[3.5rem] md:text-[4rem]" : "text-[2.75rem]")}>
             {formatScore(score)}
           </span>
@@ -76,7 +78,7 @@ export function ScoreScale({ score, verdict, tone = "light", size = "lg", labels
             <span
               className={cn(
                 "absolute top-1/2 left-0 size-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] bg-white shadow-[0_2px_6px_rgb(13_23_18/0.25)] transition-colors duration-200",
-                t.ring,
+                muted ? "border-line-strong" : t.ring,
               )}
             />
           </div>

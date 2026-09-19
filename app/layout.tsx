@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import type { ReactNode } from "react";
 import { SITE } from "@/lib/site";
 import { Header } from "@/components/layout/Header";
@@ -74,6 +75,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           {children}
         </main>
         <Footer />
+        {/* Analítica sin cookies: visitas y eventos de lib/analytics.ts. */}
+        <Analytics />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </body>
     </html>

@@ -1,4 +1,7 @@
+"use client";
+
 import type { OutboundLink } from "@/lib/affiliates";
+import { track } from "@/lib/analytics";
 import { IconExternal } from "./icons";
 import { cn } from "./cn";
 
@@ -6,7 +9,18 @@ import { cn } from "./cn";
  * Monetización visible y honesta: siempre con su etiqueta de partner
  * y la promesa de que no cambia la nota.
  */
-export function PartnerLinks({ links, title, className }: { links: OutboundLink[]; title: string; className?: string }) {
+export function PartnerLinks({
+  links,
+  title,
+  context,
+  className,
+}: {
+  links: OutboundLink[];
+  title: string;
+  /** Dónde está el bloque (categoría o "viajes"), para la analítica */
+  context: string;
+  className?: string;
+}) {
   if (links.length === 0) return null;
   return (
     <div className={className}>
@@ -21,6 +35,7 @@ export function PartnerLinks({ links, title, className }: { links: OutboundLink[
               href={l.href}
               target="_blank"
               rel="sponsored noopener noreferrer"
+              onClick={() => track("clic_partner", { partner: l.partner, origen: context })}
               className={cn(
                 "group flex min-h-13 items-center justify-between gap-3 bg-surface px-4 text-[15px] text-ink transition-colors duration-150 hover:bg-canvas",
                 "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-600",
