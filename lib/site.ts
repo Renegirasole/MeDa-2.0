@@ -3,7 +3,7 @@ export const SITE = {
   tagline: "Saber si te da, antes de comprar.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://meda.app",
   description:
-    "¿Me da para esto? Calcula gratis y sin registrarte si te da para un coche, una casa, un alquiler o un viaje con tus ingresos, gastos y ahorros. Nota de 0 a 10 y 3 planes.",
+    "¿Me da para esto? Calcula gratis si te da para un coche, una casa, un alquiler o un viaje con tus ingresos, gastos y ahorros. Nota de 0 a 10 y 3 planes.",
   /** Datos del titular para Aviso legal (LSSI). Completar antes de publicar. */
   /** ID de editor de Google AdSense (ca-pub-…). Vacío = sin anuncios. */
   adsenseClient: normalizeAdsenseId(process.env.NEXT_PUBLIC_ADSENSE_CLIENT),

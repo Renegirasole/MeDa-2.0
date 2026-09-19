@@ -14,8 +14,8 @@ export const metadata: Metadata = {
 
 const ICONS = { "vender-piso": IconHouse, "alquilar-piso": IconKey, "vender-coche": IconCar } as const;
 const TEXT = {
-  "vender-piso": "Precio de venta según pisos parecidos de tu zona",
-  "alquilar-piso": "Alquiler competitivo para no tenerlo vacío",
+  "vender-piso": "Solo con la dirección: precios oficiales de tu barrio",
+  "alquilar-piso": "Solo con la dirección: lo que se paga en tu barrio",
   "vender-coche": "Precio según anuncios del mismo modelo y sus kilómetros",
 } as const;
 
@@ -25,7 +25,7 @@ export default function AppraiserIndexPage() {
       <PageHeader
         eyebrow="Tasador"
         title="¿A cuánto lo pongo?"
-        intro="Elige qué vendes o alquilas. Comparamos con anuncios de tu zona y te damos tres precios: para vender rápido, de mercado y si no tienes prisa."
+        intro="Elige qué vendes o alquilas. Con la dirección del piso miramos solos los precios de tu barrio; con el coche, los anuncios que nos pases. Tres precios: rápido, de mercado y sin prisa."
       />
       <Container className="pb-24">
         <ul className="grid gap-4 md:grid-cols-3">

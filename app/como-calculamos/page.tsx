@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { CAPS, CUSHION_CURVE, EFFORT_CURVE, MARGIN_CURVE, VERDICT_THRESHOLDS, WEIGHTS } from "@/lib/engine";
 import { CATEGORIES } from "@/lib/data/categories";
 import { FLAG_COPY, VERDICT_COPY } from "@/lib/copy";
+import { ZONE_SOURCES } from "@/lib/zonas/datos";
 import { formatPct, formatScore } from "@/lib/format";
 import { PageHeader } from "@/components/pages/PageHeader";
 import { Container } from "@/components/ui/Section";
@@ -87,6 +88,42 @@ export default function MethodPage() {
               </li>
             ))}
           </ul>
+        </section>
+
+        <section className="border-t border-line pt-8">
+          <h2 className="text-2xl font-semibold tracking-[-0.02em] text-ink">El Tasador: de dónde salen los precios de tu zona</h2>
+          <div className="mt-3 flex flex-col gap-3 text-[15px] leading-relaxed text-ink-2">
+            <p>
+              Cuando escribes la dirección, la convertimos en coordenadas con{" "}
+              <a href="https://www.cartociudad.es/" rel="noopener noreferrer" target="_blank" className="underline underline-offset-4 hover:text-brand-700">
+                CartoCiudad
+              </a>{" "}
+              (Instituto Geográfico Nacional) y buscamos la sección censal —el barrio estadístico— en la que cae. Las viviendas
+              del edificio, sus metros construidos y su año salen de la{" "}
+              <a href="https://www.sedecatastro.gob.es/" rel="noopener noreferrer" target="_blank" className="underline underline-offset-4 hover:text-brand-700">
+                Sede Electrónica del Catastro
+              </a>
+              . No guardamos ni la dirección ni la vivienda que eliges.
+            </p>
+            <p>
+              <strong className="text-ink">Alquiler.</strong> €/m² al mes de tu barrio según el Sistema Estatal de Referencia del
+              Precio del Alquiler (Ministerio de Vivienda, {ZONE_SOURCES.rentYear}), que sale de los alquileres declarados a
+              Hacienda. «Rápido» es el percentil 25, «mercado» la mediana y «sin prisa» el 75. Son contratos en vigor, también
+              antiguos: lo que sale hoy al mercado suele estar por encima.
+            </p>
+            <p>
+              <strong className="text-ink">Venta.</strong> Valor tasado medio de vivienda libre de tu municipio (
+              {ZONE_SOURCES.salePeriod}, Ministerio de Transportes), con el valor de obra nueva si el piso tiene cinco años o
+              menos. Ese precio se ajusta a tu barrio multiplicándolo por lo que se separa el alquiler del barrio del alquiler
+              del municipio (entre 0,6 y 1,8 veces): donde alquilar cuesta más, comprar también. El abanico entre «rápido» y «sin
+              prisa» es la raíz cuadrada del que tienen los alquileres del barrio, porque los pisos en venta de una misma zona se
+              parecen más entre sí.
+            </p>
+            <p>
+              Es el valor que usan los bancos para dar hipotecas, no el precio que se pide en los portales, que suele ser mayor.
+              Si añades anuncios de hoy, mandan ellos: el dato oficial va unos meses por detrás.
+            </p>
+          </div>
         </section>
 
         <section className="border-t border-line pt-8">

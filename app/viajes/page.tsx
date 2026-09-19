@@ -8,7 +8,7 @@ import { Container } from "@/components/ui/Section";
 export const metadata: Metadata = {
   title: "Planificador de viajes: cuánto cuesta y si te da",
   description:
-    "Calcula cuánto cuesta un viaje por persona en 3 planes (barato, calidad-precio y top): aeropuerto, vuelo, alojamiento, comida y qué ver. Y si te da con tus ahorros.",
+    "Calcula cuánto cuesta un viaje por persona en 3 planes: vuelo, alojamiento, comida y qué ver. Y si te da con tus ahorros. Gratis y sin registro.",
   alternates: { canonical: "/viajes" },
 };
 

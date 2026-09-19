@@ -28,7 +28,7 @@ export default async function AppraiserPage({ params }: { params: Params }) {
     <>
       <PageHeader
         title={a.question}
-        intro="Solo usamos los anuncios que tú metes: sin datos inventados. Cuantos más y más parecidos, mejor precio."
+        intro={a.intro}
         crumbs={[{ href: "/tasador", label: "Tasador" }]}
       />
       <Container className="pb-24">

@@ -80,3 +80,13 @@ Con `prefers-reduced-motion` se quitan desplazamientos y se mantienen fundidos d
 - **Planes:** el recomendado ocupa 1,35 fr, se eleva (`shadow-raised`) y su cifra es mayor.
 - **Menú:** «Tasador» (el humor «¿A cuánto lo pongo?» queda como titular de la página).
 - **Hover:** Tailwind v4 ya limita `hover:` a `@media (hover: hover)`; no hace falta nada más.
+
+## Cambios de la semana 7
+
+- **Tasador de pisos automático:** paso 1 «¿Dónde está tu piso?» con buscador de direcciones
+  (`components/tools/ZoneLookup.tsx`, combobox accesible: flechas, Enter, Escape y `aria-activedescendant`)
+  y, si el edificio tiene viviendas en Catastro, un `SelectField` para elegir la tuya (pone metros y año).
+  Paso 2, los metros; los anuncios pasan a una `Disclosure` opcional («Afinar con anuncios de tu zona»).
+- La tarjeta de resultado dice siempre **de dónde sale la cifra**: €/m² del barrio, fuente y año, y el aviso
+  de que el dato oficial va por detrás del mercado. Si hay anuncios, mandan ellos.
+- Sin dato de zona no se enseña precio: la tarjeta pide anuncios. Nada inventado (ver docs/TASADOR.md).

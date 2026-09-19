@@ -10,7 +10,7 @@ import { ArrowGlyph } from "@/components/ui/Button";
 export const metadata: Metadata = {
   title: "Guías con números",
   description:
-    "Guías de dinero con cifras de verdad: qué sueldo necesitas para una hipoteca, cuánto cuesta un coche al mes y cuánto colchón necesitas. Calculadas con las reglas de MeDa.",
+    "Guías de dinero con cifras de verdad: qué sueldo necesitas para una hipoteca y cuánto cuesta de verdad un coche al mes. Calculadas con el motor de MeDa.",
   alternates: { canonical: "/guias" },
 };
 
