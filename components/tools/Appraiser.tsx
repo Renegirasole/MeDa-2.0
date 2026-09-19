@@ -5,7 +5,7 @@ import { appraiseByArea, appraiseByKm, MIN_COMPARABLES } from "@/lib/engine";
 import { APPRAISAL_BY_SLUG, type AppraisalSlug } from "@/lib/data/appraisal";
 import { estimate as estimateZone } from "@/lib/zonas/tasacion";
 import type { Dwelling, ZoneMode } from "@/lib/zonas/tipos";
-import { formatEUR, formatNumber } from "@/lib/format";
+import { formatDecimal, formatEUR, formatNumber } from "@/lib/format";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Disclosure } from "@/components/ui/Disclosure";
@@ -171,7 +171,7 @@ export function Appraiser({ slug }: { slug: AppraisalSlug }) {
               ) : (
                 <>
                   <p className="text-ink-2">
-                    {formatNumber(Math.round((result.unitPrice ?? 0) * 10) / 10)} € por m²
+                    {formatDecimal(result.unitPrice ?? 0)} € por m²
                     {zoneMode === "alquiler" ? " al mes" : ""} en {zoneName}.
                   </p>
                   <p>

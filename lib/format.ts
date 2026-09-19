@@ -9,6 +9,8 @@ export const formatEUR = (v: number) => (Number.isFinite(v) ? eur.format(Math.ro
 export const formatNumber = (v: number) => (Number.isFinite(v) ? num.format(v) : "—");
 export const formatPct = (v: number) => (Number.isFinite(v) ? pct.format(v) : "—");
 export const formatScore = (v: number) => one.format(v);
+/** Cifra con un decimal solo si hace falta: 8,2 €/m², 13 €/m². */
+export const formatDecimal = (v: number) => (Number.isFinite(v) ? upToOne.format(v) : "—");
 export const formatMonths = (v: number) => {
   const n = upToOne.format(Math.max(0, v));
   return `${n} ${v === 1 ? "mes" : "meses"}`;

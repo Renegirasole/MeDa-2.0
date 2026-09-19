@@ -51,6 +51,7 @@ export const CONTENT_REVIEWED = "2026-09-19";
 export const INFO_NAV = [
   { href: "/quienes-somos", label: "Quiénes somos" },
   { href: "/guias", label: "Guías" },
+  { href: "/precio-vivienda", label: "Precio de la vivienda" },
   { href: "/como-calculamos", label: "Cómo calculamos" },
   { href: "/anunciate", label: "Anúnciate en MeDa" },
 ] as const;

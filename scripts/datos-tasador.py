@@ -144,9 +144,12 @@ for r in range(16, s.nrows):
 print("tasación municipios", len(sale_muni), "sin cruzar", unmatched)
 
 s, _ = last_sheet(os.path.join(SRC, "prov.xls"))
-sale_prov = {}
+sale_prov, sale_national = {}, None
 for r in range(s.nrows):
     name = str(s.cell_value(r, 1)).strip()
+    if norm(name) == "totalnacional":
+        vals = [v for v in (num(s.cell_value(r, c)) for c in range(2, s.ncols - 2)) if v]
+        sale_national = round(vals[-1]) if vals else None
     code = prov_by_name.get(norm(name))
     if code:
         # Columnas: trimestres consecutivos y, al final, dos de variación en %. El último trimestre con dato es el más reciente.
@@ -169,7 +172,7 @@ for k, v in munis.items():
         "s": sale_muni.get(k),
     }
 provincias = {k: {"n": v["rec"]["LITPRO"], "r": v["rent"], "s": sale_prov.get(k)} for k, v in provs.items()}
-meta = {"rentYear": 2000 + int(YEAR), "salePeriod": sale_period}
+meta = {"rentYear": 2000 + int(YEAR), "salePeriod": sale_period, "nationalSale": sale_national}
 with open(os.path.join(OUT, "municipios.json"), "w", encoding="utf-8") as f:
     json.dump({"meta": meta, "municipios": municipios, "provincias": provincias}, f, ensure_ascii=False, separators=(",", ":"))
 with open(os.path.join(OUT, "secciones.json"), "w", encoding="utf-8") as f:

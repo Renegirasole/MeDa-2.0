@@ -3,6 +3,7 @@ import Link from "next/link";
 import { GUIDES, type Pillar } from "@/lib/guides";
 import { formatDate, formatEUR } from "@/lib/format";
 import { CAR_SALARIES, carSlug, MORTGAGE_AMOUNTS, mortgageSlug, RENT_SALARIES, rentSlug } from "@/lib/programmatic";
+import { TOWNS } from "@/lib/zonas/precios";
 import { PageHeader } from "@/components/pages/PageHeader";
 import { Container } from "@/components/ui/Section";
 import { ArrowGlyph } from "@/components/ui/Button";
@@ -73,6 +74,31 @@ export default function GuidesPage() {
               </ul>
             </section>
           ))}
+
+          <section aria-labelledby="ciudades" className="border-t border-line pt-8">
+            <h2 id="ciudades" className="text-[13px] font-medium text-brand-700">
+              Precio de la vivienda
+            </h2>
+            <Link
+              href="/precio-vivienda"
+              className="group/btn -mx-4 mt-4 grid gap-2 rounded-card px-4 py-6 transition-colors duration-150 hover:bg-surface md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-10"
+            >
+              <span>
+                <span className="block text-[1.375rem] leading-snug font-semibold tracking-[-0.02em] text-balance text-ink md:text-[1.625rem]">
+                  ¿Cuánto cuesta un piso en tu ciudad?
+                </span>
+                <span className="mt-2 block max-w-[65ch] text-[16px] leading-relaxed text-muted">
+                  Precio del m², cuota, sueldo necesario y alquiler en {TOWNS.length} ciudades, con datos oficiales.
+                </span>
+              </span>
+              <span className="flex items-center gap-3 text-[14px] text-muted">
+                {TOWNS.length} ciudades
+                <span className="text-ink">
+                  <ArrowGlyph />
+                </span>
+              </span>
+            </Link>
+          </section>
 
           <section aria-labelledby="rapidas" className="border-t border-line pt-8">
             <h2 id="rapidas" className="text-[13px] font-medium text-brand-700">
