@@ -28,6 +28,7 @@ import { Explanation } from "./Explanation";
 import { PlansList, recommendedTier } from "./PlansList";
 import { ShareButton } from "./ShareButton";
 import { GoalBlock } from "./GoalBlock";
+import { NotifyBlock } from "./NotifyBlock";
 import { Step } from "./Step";
 
 /** Bloque de la segunda mitad: titular propio, sin caja de más. */
@@ -212,6 +213,7 @@ export function AffordabilityCalculator({ slug }: { slug: CategorySlug }) {
         <div className="grid gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-16">
           <div className="flex flex-col gap-8">
             {!example && <GoalBlock profile={profile} purchase={purchase} guideline={category.guideline} result={result} recurring={recurring} />}
+            {!example && !passes && <NotifyBlock category={slug} amount={recurring ? purchase.monthlyFee : purchase.price} verdict={result.verdict} />}
             {example ? (
               <p className="text-[15px] leading-relaxed text-ink-2">
                 <a href="#paso-1" className="font-medium text-ink underline underline-offset-4 hover:text-brand-700">

@@ -66,6 +66,12 @@ const PAGES: Record<string, { title: string; body: ReactNode }> = {
             .
           </p>
         )}
+        <p>
+          Si te apuntas a «Avísame», guardamos tu email y el objetivo que estabas mirando (qué y cuánto cuesta), nunca tus
+          ingresos, gastos ni ahorros. Lo usamos solo para escribirte una vez al mes sobre ese objetivo, con tu consentimiento,
+          y lo borramos en cuanto te das de baja desde cualquier email o nos lo pides. Se guarda en Vercel (servidores en
+          Fráncfort, Unión Europea) y los emails se envían con Resend. Ninguno de los dos puede usarlo para nada más.
+        </p>
         <p>Responsable: {SITE.owner.legalName}. Para ejercer tus derechos, escribe a {SITE.owner.email}.</p>
       </>
     ),

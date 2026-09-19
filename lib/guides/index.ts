@@ -31,6 +31,18 @@ export const GUIDES: Guide[] = [
     updated: "2026-09-19",
     minutes: 6,
   },
+  {
+    slug: "coste-real-coche",
+    pillar: "Coche y moto",
+    title: "¿Cuánto cuesta de verdad un coche al mes?",
+    teaser: "La letra es solo una parte. Cuota, gasolina, seguro y mantenimiento, con el sueldo que hace falta para cada precio.",
+    description:
+      "Un coche de 16.000 € no cuesta 260 € al mes: con gasolina, seguro y mantenimiento son unos 460 €. Coste real por precio, sueldo necesario e intereses según el plazo.",
+    category: "coche",
+    published: "2026-09-19",
+    updated: "2026-09-19",
+    minutes: 5,
+  },
 ];
 
 export const GUIDE_BY_SLUG = Object.fromEntries(GUIDES.map((g) => [g.slug, g])) as Record<string, Guide>;

@@ -5,7 +5,7 @@
  *
  * Uso, con la web en marcha (npm run build && npm start):
  *   npx tsx scripts/exportar-imagenes.ts [url-base]   (por defecto http://localhost:3000)
- * Guarda en docs/marketing/semana-3/.
+ * Guarda en docs/marketing/semana-3/ y docs/marketing/semana-5/.
  */
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -14,7 +14,7 @@ import { CATEGORY_BY_SLUG, type CategorySlug } from "../lib/data/categories";
 import { makeScoreCard, scoreCardQuery } from "../lib/scorecard";
 
 const base = process.argv[2] ?? "http://localhost:3000";
-const out = join(process.cwd(), "docs", "marketing", "semana-3");
+const out = join(process.cwd(), "docs", "marketing");
 
 const profile = (monthlyIncome: number, monthlyExpenses: number, savings: number): FinancialProfile => ({
   monthlyIncome,
@@ -34,13 +34,14 @@ function story(slug: CategorySlug, p: FinancialProfile, change: Partial<Purchase
 }
 
 const jobs: [string, string][] = [
-  ...Array.from({ length: 7 }, (_, i): [string, string] => [`carrusel/hipoteca-${i + 1}.png`, `/api/carrusel?n=${i + 1}`]),
+  ...Array.from({ length: 7 }, (_, i): [string, string] => [`semana-3/carrusel/hipoteca-${i + 1}.png`, `/api/carrusel?guia=hipoteca&n=${i + 1}`]),
+  ...Array.from({ length: 7 }, (_, i): [string, string] => [`semana-5/carrusel/coche-${i + 1}.png`, `/api/carrusel?guia=coche&n=${i + 1}`]),
   // V1: 1.400 € de sueldo y un coche de 16.000 € con 3.000 € de entrada a 60 meses.
-  ["stories/v1-coche-16000.png", story("coche", profile(1400, 800, 4000), { price: 16000, downPayment: 3000, termMonths: 60 })],
+  ["semana-3/stories/v1-coche-16000.png", story("coche", profile(1400, 800, 4000), { price: 16000, downPayment: 3000, termMonths: 60 })],
   // V3: alquiler de 950 € cobrando 1.600 €.
-  ["stories/v3-alquiler-950.png", story("alquilar-vivienda", profile(1600, 500, 3000), { monthlyFee: 950, upfrontCosts: 1900 })],
+  ["semana-3/stories/v3-alquiler-950.png", story("alquilar-vivienda", profile(1600, 500, 3000), { monthlyFee: 950, upfrontCosts: 1900 })],
   // V4: móvil de 1.300 € a 24 meses (sin intereses) cobrando 1.200 €.
-  ["stories/v4-movil-1300.png", story("tecnologia", profile(1200, 750, 800), { price: 1300, termMonths: 24 })],
+  ["semana-3/stories/v4-movil-1300.png", story("tecnologia", profile(1200, 750, 800), { price: 1300, termMonths: 24 })],
 ];
 
 async function main() {

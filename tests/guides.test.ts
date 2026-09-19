@@ -38,3 +38,12 @@ test("guías con slug único y fechas ISO", () => {
   assert.equal(new Set(GUIDES.map((g) => g.slug)).size, GUIDES.length);
   for (const g of GUIDES) assert.match(g.updated, /^\d{4}-\d{2}-\d{2}$/);
 });
+
+test("coche: el reparto de gastos suma lo de la calculadora", async () => {
+  const { carRow, RUNNING_EXAMPLE, CAR_GUIDE } = await import("../lib/guides/car");
+  assert.equal(RUNNING_EXAMPLE.reduce((a, r) => a + r.value, 0), CAR_GUIDE.running);
+  const r = carRow(16_000);
+  assert.equal(Math.round(r.payment), 260);
+  assert.equal(Math.round(r.monthlyTotal), 460);
+  assert.ok(carRow(16_000, 84).interest > carRow(16_000, 36).interest);
+});
