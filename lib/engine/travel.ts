@@ -9,6 +9,12 @@ export interface OriginRef {
   airportTransfer: Tiered;
   /** Multiplicador del precio del transporte desde este origen */
   transportFactor: number;
+  lat: number;
+  lon: number;
+  /** ISO 3166-1 alfa-2 */
+  country: string;
+  /** Código IATA de la ciudad, para buscar precios de vuelo reales */
+  iata?: string;
 }
 
 export interface DestinationRef {
@@ -23,6 +29,15 @@ export interface DestinationRef {
   /** Visitas y transporte local por persona y día */
   activitiesPerDay: Tiered;
   highlights: Record<PlanTier, string[]>;
+  lat: number;
+  lon: number;
+  /** ISO 3166-1 alfa-2 */
+  country: string;
+  iata?: string;
+  /** Nombre en inglés, para partners que usan slugs en inglés (traslados) */
+  nameEn?: string;
+  /** false cuando las cifras son una estimación por país, no datos revisados a mano */
+  curated?: boolean;
 }
 
 export interface TripInput {

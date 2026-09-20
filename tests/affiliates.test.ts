@@ -45,7 +45,51 @@ test("sin contexto: textos genéricos y sin filtros", () => {
   assert.deepEqual(dealLinks("otro"), []);
 });
 
-test("viajes: destino ya puesto en Booking", () => {
-  const [booking] = travelLinks("Lisboa");
-  assert.equal(new URL(booking.href).searchParams.get("ss"), "Lisboa");
+const trip = (over: Partial<Parameters<typeof travelLinks>[0]> = {}) =>
+  travelLinks({
+    destination: "Lisboa",
+    country: "PT",
+    originCountry: "ES",
+    transferSlug: "lisbon",
+    esimSlug: null,
+    tier: "value",
+    flying: true,
+    travelers: 2,
+    ...over,
+  });
+
+test("viajes: destino y personas ya puestos en Booking", () => {
+  const booking = trip().find((l) => l.partner === "Booking.com")!;
+  const u = new URL(booking.href);
+  assert.equal(u.searchParams.get("ss"), "Lisboa");
+  assert.equal(u.searchParams.get("group_adults"), "2");
+  assert.equal(u.searchParams.get("no_rooms"), "1");
+  assert.equal(u.searchParams.get("nflt"), "class=3");
+});
+
+test("viajes: el plan barato lleva a hostales y ordena por precio", () => {
+  const links = trip({ tier: "budget" });
+  const booking = links.find((l) => l.partner === "Booking.com")!;
+  assert.equal(new URL(booking.href).searchParams.get("order"), "price");
+  assert.ok(links.some((l) => l.partner === "Hostelworld"));
+  // Sin traslado en el plan barato: se va en transporte público.
+  assert.ok(!links.some((l) => l.partner === "Welcome Pickups"));
+});
+
+test("viajes: traslado solo si se vuela, y con la ciudad que cubre el partner", () => {
+  const flying = trip().find((l) => l.partner === "Welcome Pickups");
+  assert.ok(flying?.href.includes("/lisbon/"));
+  assert.ok(!trip({ flying: false }).some((l) => l.partner === "Welcome Pickups"));
+});
+
+test("viajes: sin ciudad de traslados, se busca en GetYourGuide", () => {
+  const links = trip({ transferSlug: null });
+  const transfer = links.find((l) => l.label.startsWith("Traslado"))!;
+  assert.equal(transfer.partner, "GetYourGuide");
+});
+
+test("viajes: la eSIM solo aparece cuando hace falta", () => {
+  assert.ok(!trip().some((l) => l.partner === "Airalo"));
+  const far = trip({ country: "TH", esimSlug: "thailand" }).find((l) => l.partner === "Airalo")!;
+  assert.equal(far.href.split("?")[0], "https://www.airalo.com/thailand-esim");
 });

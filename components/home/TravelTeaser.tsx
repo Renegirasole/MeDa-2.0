@@ -13,7 +13,7 @@ export function TravelTeaser() {
   const origin = ORIGIN_BY_ID[TRIP_EXAMPLE.origin];
   const dest = DESTINATION_BY_ID[TRIP_EXAMPLE.destination];
   const plans = planTrip(origin, dest, TRIP_EXAMPLE);
-  const href = `/viajes?o=${origin.id}&d=${dest.id}&n=${TRIP_EXAMPLE.nights}&p=${TRIP_EXAMPLE.travelers}`;
+  const href = `/viajes?o=c:${origin.id}&d=c:${dest.id}&n=${TRIP_EXAMPLE.nights}&p=${TRIP_EXAMPLE.travelers}`;
 
   return (
     <Section

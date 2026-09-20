@@ -32,7 +32,8 @@ Resto de `lib/`:
 | Ruta | Qué hay |
 |---|---|
 | `lib/data/categories.ts` | Las 10 calculadoras: SEO, valores por defecto, `guideline` (peso razonable del gasto sobre ingresos) |
-| `lib/data/travel.ts` | Precios de referencia de viajes (orígenes/destinos). Fecha de actualización en `TRAVEL_REFERENCE_UPDATED` |
+| `lib/data/travel.ts` | Precios de referencia de viajes (orígenes/destinos revisados a mano). Fecha de actualización en `TRAVEL_REFERENCE_UPDATED` |
+| `lib/viajes/` | Viajes a cualquier parte del mundo: `lugares.ts` (buscador y catálogo, puro), `paises.ts` (índice de precios, roaming, eSIM), `resolver.ts` (convierte una ciudad en cifras para el motor), `traslados.ts`, `fuentes.ts` (Aviasales: autocompletado y precios) y `hooks.ts` |
 | `lib/data/appraisal.ts` | Configuración del tasador (piso venta/alquiler, coche) |
 | `lib/explain/template.ts` | Explicación en lenguaje llano sin IA (siempre disponible) |
 | `lib/storage/` | Perfil guardado en `localStorage`, sincronizado entre pestañas |
@@ -46,12 +47,12 @@ Nota 0–10 = 40 % esfuerzo mensual + 30 % margen que te queda + 30 % colchón t
 
 ## Rutas
 
-`/` · `/mi-situacion` (noindex) · `/calculadoras` · `/calculadoras/[categoria]` (10, estáticas) · `/viajes` · `/comparar` · `/combinar` · `/tasador` · `/tasador/[tipo]` · `/como-calculamos` · `/anunciate` · `/legal/[slug]` · `/api/explain` · `sitemap.xml` · `robots.txt`
+`/` · `/mi-situacion` (noindex) · `/calculadoras` · `/calculadoras/[categoria]` (10, estáticas) · `/viajes` · `/comparar` · `/combinar` · `/tasador` · `/tasador/[tipo]` · `/como-calculamos` · `/anunciate` · `/legal/[slug]` · `/api/explain` · `/api/lugares` · `/api/vuelos` · `sitemap.xml` · `robots.txt`
 
 ## Escalar
 
 - **Nueva calculadora**: añade una entrada en `lib/data/categories.ts` (y sus enlaces en `lib/affiliates.ts`). La ruta, el sitemap y la tarjeta de la home salen solos.
-- **Nuevo destino de viaje**: añade el destino y sus tramos en `lib/data/travel.ts`.
+- **Nuevo destino de viaje**: no hace falta tocar nada. El buscador cubre cualquier ciudad con aeropuerto del mundo (`/api/lugares`) y estima el gasto con el índice de precios de su país. Añadir el destino a `lib/data/travel.ts` sirve para darle cifras revisadas a mano y su propio «qué ver»; si está a menos de 25 km de lo que elija la persona, se usa esa ficha.
 - **Cambiar la fórmula**: toca `lib/engine/scoring.ts` y ejecuta `npm test`; los tests fijan los ejemplos que se ven en la home.
 
 ## Antes de producción
@@ -59,4 +60,5 @@ Nota 0–10 = 40 % esfuerzo mensual + 30 % margen que te queda + 30 % colchón t
 1. Datos del titular en `.env` (`NEXT_PUBLIC_LEGAL_*`) y revisión de los textos legales por un profesional.
 2. Sustituir URLs de `lib/affiliates.ts` por los deep links aprobados (Awin, Amazon, Booking, Skyscanner…).
 3. IA opcional: `NEXT_PUBLIC_AI_ENABLED=true` + `ANTHROPIC_API_KEY`. El rate limit de `/api/explain` es en memoria: con más de una instancia, moverlo a Upstash/Redis.
+3b. Viajes: `TRAVELPAYOUTS_TOKEN` (precios reales de vuelo) y `TRAVELPAYOUTS_MARKER` (comisión). Sin ellos el planificador funciona igual, con la estimación por distancia.
 4. Analítica sin cookies (Plausible/Umami) si se quiere medir clics salientes sin banner de consentimiento.

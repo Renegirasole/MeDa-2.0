@@ -17,8 +17,14 @@ Si la variable está vacía o no es válida, el enlace funciona igual, pero va d
 | `NEXT_PUBLIC_AFF_HELPMYCASH` | HelpMyCash (hipotecas) | Comprar vivienda |
 | `NEXT_PUBLIC_AFF_RASTREATOR` | Rastreator (seguros de coche, moto y hogar) | Coche, moto, alquiler |
 | `NEXT_PUBLIC_AFF_ACIERTO` | Acierto (seguro de coche) | Coche |
-| `NEXT_PUBLIC_AFF_BOOKING` | Booking.com | Viajes |
-| `NEXT_PUBLIC_AFF_SKYSCANNER` | Skyscanner | Viajes |
+| `NEXT_PUBLIC_AFF_BOOKING` | Booking.com | Viajes: alojamiento en los tres planes |
+| `NEXT_PUBLIC_AFF_SKYSCANNER` | Skyscanner | Viajes: vuelo, si no hay precio real |
+| `NEXT_PUBLIC_AFF_CIVITATIS` | Civitatis | Viajes: actividades en español (barato y calidad-precio) |
+| `NEXT_PUBLIC_AFF_GETYOURGUIDE` | GetYourGuide | Viajes: experiencias (top) y traslados sin Welcome Pickups |
+| `NEXT_PUBLIC_AFF_TIQETS` | Tiqets | Viajes: entradas a museos y monumentos |
+| `NEXT_PUBLIC_AFF_HOSTELWORLD` | Hostelworld | Viajes: hostales (plan barato) |
+| `NEXT_PUBLIC_AFF_WELCOMEPICKUPS` | Welcome Pickups | Viajes: traslado del aeropuerto al hotel |
+| `NEXT_PUBLIC_AFF_AIRALO` | Airalo | Viajes: eSIM, solo fuera del roaming europeo |
 | `NEXT_PUBLIC_AFF_COCHESNET` | coches.net y motos.net | Coche, moto |
 | `NEXT_PUBLIC_AFF_AUTOSCOUT24` | AutoScout24 | Coche |
 | `NEXT_PUBLIC_AFF_FOTOCASA` | Fotocasa | Comprar y alquilar vivienda |
@@ -42,6 +48,8 @@ La tabla de pagos es orientativa y hay que confirmarla al entrar en cada program
 | 3 | **Amazon Afiliados** | 1–10 % de la venta | afiliados.amazon.es | Gratis |
 | 4 | **Booking.com** | 4–6 % de la reserva | Programa de afiliados de Booking | Gratis |
 | 5 | **Awin** (la red donde están muchos) | Según programa | awin.com/es → Soy publisher | **Depósito de unos 5 €** que devuelven con el primer pago. **Avisad antes de pagarlo.** |
+| 5b | **Travelpayouts** (un alta cubre GetYourGuide, Tiqets, Hostelworld, Booking, Welcome Pickups, Airalo y los vuelos de Aviasales) | 4–10 % según marca | travelpayouts.com → alta, dar de alta el proyecto `medaono.com` y suscribirse a cada marca | Gratis |
+| 5c | **Civitatis** (programa propio, en español) | 8–10 % + 1 € por persona en free tours | civitatis.com/es/afiliados | Gratis |
 | 6 | Skyscanner, coches.net, AutoScout24, Fotocasa | Poco o sin programa abierto | Solo si sobra tiempo | — |
 
 ### Datos que os pedirán (tenerlos a mano)
@@ -64,6 +72,15 @@ La tabla de pagos es orientativa y hay que confirmarla al entrar en cada program
 3. Vercel → proyecto **meda** → Settings → Environment Variables → añadir la variable (Production).
 4. **Volved a publicar.** Las variables `NEXT_PUBLIC_` se meten al compilar, así que sin nuevo deploy no se aplican. Vale con Deployments → último → Redeploy, o pedírmelo.
 5. Comprobad en medaono.com que el enlace pasa por la red (pasad el ratón por encima o abridlo).
+
+## Viajes: dos variables aparte de las de afiliación
+
+| Variable | Para qué | Dónde se pone |
+| --- | --- | --- |
+| `TRAVELPAYOUTS_TOKEN` | Precios reales de vuelo en el planificador (Aviasales Data API). Sin él, el vuelo se estima por distancia y no se rompe nada | Vercel, **sin** prefijo `NEXT_PUBLIC_`: es un secreto de servidor |
+| `TRAVELPAYOUTS_MARKER` | Vuestro partner ID: hace que el enlace «Ver ese vuelo» pague comisión | Vercel, también sin prefijo público |
+
+El marker está abajo a la izquierda del panel de Travelpayouts; el token, en Perfil → API token.
 
 ## Reglas de confianza (no negociables)
 
