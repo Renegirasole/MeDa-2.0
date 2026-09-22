@@ -77,13 +77,17 @@ Por eso solo se usan: datos abiertos de las administraciones y la API que el pro
 
 1. Pedir la llave en <https://developers.idealista.com/access-request> (formulario: nombre, email y para qué).
    Contad que es una calculadora gratuita que enseña el precio de la zona y enlaza a sus anuncios.
-2. Cuando llegue la llave:
+   El formulario se rellenó el 22/09/2026 a nombre de «René (MeDa)» con holamedaono@gmail.com;
+   lleva un reCAPTCHA de imágenes, así que el envío final lo hace una persona.
+2. Cuando llegue la llave, comprobarla antes de tocar producción: ponedla en `.env.local` y
+   ejecutad `npx tsx scripts/probar-idealista.ts`. Dice si la llave vale y qué €/m² saldrían.
+3. Ponerla en Vercel:
    ```
    npx vercel env add IDEALISTA_API_KEY production
    npx vercel env add IDEALISTA_SECRET production
    ```
    (`BLOB_READ_WRITE_TOKEN` ya está: es el mismo almacén que la lista de avisos.)
-3. Redesplegar. La web lo cuenta sola en `/como-calculamos` y en la tarjeta del resultado.
+4. Redesplegar. La web lo cuenta sola en `/como-calculamos` y en la tarjeta del resultado.
 
 ### Cupo
 
