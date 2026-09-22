@@ -3,6 +3,8 @@ import { CAPS, CUSHION_CURVE, EFFORT_CURVE, MARGIN_CURVE, VERDICT_THRESHOLDS, WE
 import { CATEGORIES } from "@/lib/data/categories";
 import { FLAG_COPY, VERDICT_COPY } from "@/lib/copy";
 import { ZONE_SOURCES } from "@/lib/zonas/datos";
+import { RADIUS_M } from "@/lib/zonas/portales";
+import { CONDITION_FACTOR, EXTRA_AREA, floorFactor } from "@/lib/zonas/caracteristicas";
 import { formatPct, formatScore } from "@/lib/format";
 import { PageHeader } from "@/components/pages/PageHeader";
 import { Container } from "@/components/ui/Section";
@@ -120,8 +122,25 @@ export default function MethodPage() {
               parecen más entre sí.
             </p>
             <p>
-              Es el valor que usan los bancos para dar hipotecas, no el precio que se pide en los portales, que suele ser mayor.
-              Si añades anuncios de hoy, mandan ellos: el dato oficial va unos meses por detrás.
+              <strong className="text-ink">Anuncios de hoy.</strong> Cuando hay suficientes pisos publicados cerca de tu
+              dirección, mandan ellos: cogemos los que hay a menos de {RADIUS_M} metros a través de la API oficial de idealista y
+              nos quedamos con sus €/m² en cuartiles, quitando los anuncios imposibles. Es el precio que se pide, no el de cierre;
+              en la venta se suele cerrar algo por debajo. No rastreamos ninguna web: solo usamos datos que los portales publican
+              para esto.
+            </p>
+            <p>
+              <strong className="text-ink">Tu piso, no el de al lado.</strong> Sobre el precio de la zona se aplican los
+              coeficientes que de verdad separan dos pisos del mismo portal, en la línea de las normas técnicas de valoración
+              catastral (RD 1020/1993): estado ({formatPct(CONDITION_FACTOR.reformar - 1)} si está para reformar,{" "}
+              {formatPct(CONDITION_FACTOR.reformado - 1)} si está reformado), planta y ascensor (un cuarto sin ascensor pierde un{" "}
+              {formatPct(1 - floorFactor(4, false))}), exterior o interior, y los extras: la terraza cuenta al{" "}
+              {formatPct(EXTRA_AREA.terraceShare)} del precio del metro, el garaje como {EXTRA_AREA.garage} m² y el trastero como{" "}
+              {EXTRA_AREA.storage} m². En la pantalla se ve cada ajuste por separado.
+            </p>
+            <p>
+              El orden es siempre el mismo: los anuncios que metas tú, los anuncios publicados cerca y, si no hay nada de lo
+              anterior, el dato oficial. El valor tasado es el que usan los bancos para dar hipotecas, no el que se pide en los
+              portales, que suele ser mayor.
             </p>
           </div>
         </section>

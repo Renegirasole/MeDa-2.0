@@ -19,6 +19,7 @@ import { rentSlug, RENT_SALARIES } from "@/lib/programmatic";
 import { encodeShare } from "@/lib/share";
 import { formatDecimal, formatEUR, formatNumber, formatPct } from "@/lib/format";
 import { DataTable, GuideSection, GuideShell, type Faq } from "@/components/guides/Guide";
+import { Sparkline } from "@/components/ui/Sparkline";
 import { Stat } from "@/components/ui/Stat";
 
 type Params = Promise<{ municipio: string }>;
@@ -174,6 +175,32 @@ export default async function TownPricePage({ params }: { params: Params }) {
               </Link>
             )}
             .
+          </p>
+        </>
+      )}
+
+      {t.history && (
+        <>
+          <GuideSection id="evolucion" title="Cómo ha cambiado el precio">
+            <p>
+              Desde {t.history.labels[0]}, el metro cuadrado en {t.name} ha{" "}
+              <strong className="font-medium text-ink">
+                {t.history.change >= 0 ? "subido" : "bajado"} un {formatPct(Math.abs(t.history.change))}
+              </strong>{" "}
+              (de {unit(t.history.values[0])} a {unit(t.history.values[t.history.values.length - 1])}). Son valores de tasación
+              trimestrales del Ministerio de Transportes, la misma serie que usan los bancos.
+            </p>
+          </GuideSection>
+          <Sparkline
+            values={t.history.values}
+            labels={t.history.labels}
+            title={`Valor tasado del m² en ${t.name}, de ${t.history.labels[0]} a ${t.history.labels[t.history.labels.length - 1]}: de ${unit(t.history.values[0])} a ${unit(t.history.values[t.history.values.length - 1])}`}
+            className="-mt-6 mb-2 max-w-xl"
+          />
+          <p className="-mt-6 max-w-[65ch] text-[15px] leading-relaxed text-muted">
+            Con esa subida, un piso de {HEADLINE_AREA} m² vale hoy{" "}
+            {formatEUR(c.price - Math.round((t.history.values[0] * HEADLINE_AREA) / 1000) * 1000)} más que hace{" "}
+            {t.history.years} años.
           </p>
         </>
       )}

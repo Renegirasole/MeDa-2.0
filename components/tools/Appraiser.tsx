@@ -3,13 +3,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { appraiseByArea, appraiseByKm, MIN_COMPARABLES } from "@/lib/engine";
 import { APPRAISAL_BY_SLUG, type AppraisalSlug } from "@/lib/data/appraisal";
-import { estimate as estimateZone } from "@/lib/zonas/tasacion";
+import { estimate as estimateZone, estimateFromListings } from "@/lib/zonas/tasacion";
+import {
+  adjustForFeatures,
+  CONDITION_LABEL,
+  DEFAULT_FEATURES,
+  type Condition,
+  type Features,
+  type Views,
+} from "@/lib/zonas/caracteristicas";
 import type { Dwelling, ZoneMode } from "@/lib/zonas/tipos";
-import { formatDecimal, formatEUR, formatNumber } from "@/lib/format";
+import { formatEUR, formatNumber, formatPct, formatUnitPrice } from "@/lib/format";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Disclosure } from "@/components/ui/Disclosure";
-import { NumberField } from "@/components/ui/Field";
+import { CheckField, NumberField, Segmented, SelectField } from "@/components/ui/Field";
 import { IconPlus, IconTrash } from "@/components/ui/icons";
 import { cn } from "@/components/ui/cn";
 import { Step } from "./Step";
@@ -32,12 +40,16 @@ export function Appraiser({ slug }: { slug: AppraisalSlug }) {
   const [rows, setRows] = useState<Row[]>(emptyRows(MIN_COMPARABLES));
   const [zone, setZone] = useState<ZoneResult | null>(null);
   const [dwelling, setDwelling] = useState<Dwelling | null>(null);
+  const [features, setFeatures] = useState<Features>(DEFAULT_FEATURES);
+  const setFeature = <K extends keyof Features>(k: K, v: Features[K]) => setFeatures((f) => ({ ...f, [k]: v }));
   const measureLabel = cfg.mode === "area" ? "Metros" : "Kilómetros";
   const measureSuffix = cfg.mode === "area" ? "m²" : "km";
 
-  // La vivienda elegida en el Catastro pone los metros; se pueden cambiar a mano después.
+  // La vivienda elegida en el Catastro pone los metros y la planta; todo se puede cambiar a mano.
   useEffect(() => {
-    if (dwelling) setSubject(dwelling.area);
+    if (!dwelling) return;
+    setSubject(dwelling.area);
+    setFeatures((f) => ({ ...f, floor: dwelling.level ?? f.floor }));
   }, [dwelling]);
 
   const comparables = useMemo(() => {
@@ -45,14 +57,33 @@ export function Appraiser({ slug }: { slug: AppraisalSlug }) {
     return appraiseByKm(rows.map((r) => ({ price: r.price, km: r.measure })), subject, cfg.roundStep);
   }, [cfg, rows, subject]);
 
+  // Anuncios publicados ahora mismo cerca de la dirección (idealista, si hay llave).
+  const fromPortal = useMemo(
+    () => (zone?.listings && zoneMode ? estimateFromListings(zone.listings, zoneMode, subject) : null),
+    [zone, zoneMode, subject],
+  );
   const fromZone = useMemo(
     () => (zone && zoneMode ? estimateZone(zone.zone, zoneMode, subject, dwelling?.year ?? null) : null),
     [zone, zoneMode, subject, dwelling],
   );
 
-  // Los anuncios que mete la persona son de hoy: mandan sobre el dato oficial, que va con retraso.
-  const result = comparables ?? fromZone;
-  const source = comparables ? "anuncios" : fromZone ? "oficial" : null;
+  // Orden: lo que mete la persona, lo que se pide hoy en la zona y, si no hay nada, el dato oficial.
+  const base = comparables ?? fromPortal ?? fromZone;
+  const source = comparables ? "anuncios" : fromPortal ? "portal" : fromZone ? "oficial" : null;
+
+  // Tu piso dentro de su zona: planta, estado, exterior y extras.
+  // El valor tasado de obra nueva ya va aparte: no se puede sumar «a estrenar» encima.
+  const alreadyNew = Boolean(dwelling?.year && new Date().getFullYear() - dwelling.year <= 5 && !comparables && !fromPortal);
+
+  const tuned = useMemo(() => {
+    if (!base || !zoneMode) return null;
+    const unitPrice = base.unitPrice ?? 0;
+    const each = (v: number) => adjustForFeatures(v, features, unitPrice, zoneMode, alreadyNew);
+    const market = each(base.market);
+    return { quick: each(base.quick).value, market: market.value, ambitious: each(base.ambitious).value, breakdown: market.breakdown };
+  }, [base, features, zoneMode, alreadyNew]);
+
+  const result = tuned ? { ...base!, quick: tuned.quick, market: tuned.market, ambitious: tuned.ambitious } : base;
 
   const filled = rows.filter((r) => r.price > 0 && (cfg.mode === "km" || r.measure > 0)).length;
   const unit = cfg.priceSuffix === "€/mes" ? " al mes" : "";
@@ -109,7 +140,7 @@ export function Appraiser({ slug }: { slug: AppraisalSlug }) {
         {zoneMode ? (
           <>
             <Step n={1} title="¿Dónde está tu piso?">
-              <ZoneLookup result={zone} onResult={setZone} onDwelling={setDwelling} selectedRef={dwelling?.ref ?? null} />
+              <ZoneLookup mode={zoneMode} result={zone} onResult={setZone} onDwelling={setDwelling} selectedRef={dwelling?.ref ?? null} />
             </Step>
             <Step n={2} title="Los metros">
               <NumberField
@@ -121,6 +152,43 @@ export function Appraiser({ slug }: { slug: AppraisalSlug }) {
                 className="max-w-sm"
                 hint={dwelling ? "Los pone el Catastro. Cámbialos si no cuadran." : "Superficie construida, la que sale en las escrituras."}
               />
+            </Step>
+
+            <Step n={3} title="¿Cómo es tu piso?">
+              <p className="-mt-2 mb-6 max-w-xl text-[15px] leading-relaxed text-muted">
+                Dos pisos del mismo portal no valen lo mismo. Esto es lo que más los separa.
+              </p>
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <SelectField
+                  label="Estado"
+                  value={features.condition}
+                  onChange={(v) => setFeature("condition", v as Condition)}
+                  options={(Object.keys(CONDITION_LABEL) as Condition[]).map((c) => ({ value: c, label: CONDITION_LABEL[c] }))}
+                />
+                <NumberField
+                  label="Planta"
+                  value={features.floor ?? 0}
+                  onChange={(v) => setFeature("floor", v)}
+                  min={0}
+                  max={40}
+                  hint={dwelling?.level !== null && dwelling?.level !== undefined ? "La pone el Catastro." : "0 = bajo"}
+                />
+                <Segmented
+                  label="Orientación"
+                  value={features.views}
+                  onChange={(v) => setFeature("views", v as Views)}
+                  options={[
+                    { value: "exterior", label: "Exterior" },
+                    { value: "interior", label: "Interior" },
+                  ]}
+                />
+                <NumberField label="Terraza" suffix="m²" value={features.terrace} onChange={(v) => setFeature("terrace", v)} max={200} />
+                <div className="flex flex-col gap-3 sm:col-span-2 sm:flex-row">
+                  <CheckField label="Con ascensor" checked={features.lift} onChange={(v) => setFeature("lift", v)} />
+                  <CheckField label="Plaza de garaje" checked={features.garage} onChange={(v) => setFeature("garage", v)} />
+                  <CheckField label="Trastero" checked={features.storage} onChange={(v) => setFeature("storage", v)} />
+                </div>
+              </div>
               <div className="mt-6 border-t border-line pt-4">
                 <Disclosure summary="Afinar con anuncios de tu zona" meta={filled > 0 ? `${filled} puesto${filled === 1 ? "" : "s"}` : "opcional"}>
                   {comparablesBlock}
@@ -160,6 +228,27 @@ export function Appraiser({ slug }: { slug: AppraisalSlug }) {
                 </div>
               ))}
             </dl>
+            {tuned && tuned.breakdown.length > 0 && (
+              <div className="mt-4 border-t border-line pt-4">
+                <p className="text-[13px] font-medium text-muted">Tu piso, frente a la media de la zona</p>
+                <ul className="mt-2 flex flex-col gap-1.5">
+                  {tuned.breakdown.map((b) => {
+                    const pct = b.factor ? b.factor - 1 : null;
+                    const up = (pct ?? b.amount ?? 0) >= 0;
+                    return (
+                      <li key={b.label} className="flex items-baseline justify-between gap-4 text-[14px]">
+                        <span className="text-ink-2">{b.label}</span>
+                        <span className={cn("num font-medium", up ? "text-brand-700" : "text-alert-700")}>
+                          {pct !== null
+                            ? `${up ? "+" : "−"}${formatPct(Math.abs(pct))}`
+                            : `${up ? "+" : "−"}${formatEUR(Math.abs(b.amount ?? 0))}`}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
             <div className="mt-4 flex flex-col gap-2 border-t border-line pt-4 text-[14px] leading-relaxed text-muted">
               {source === "anuncios" ? (
                 <p>
@@ -168,10 +257,24 @@ export function Appraiser({ slug }: { slug: AppraisalSlug }) {
                     : `Calculado con ${comparables?.used} anuncios, ajustando por kilómetros.`}{" "}
                   Los precios de anuncio suelen estar algo por encima del precio de cierre.
                 </p>
+              ) : source === "portal" && zone?.listings ? (
+                <>
+                  <p className="text-ink-2">
+                    {formatUnitPrice(zone.listings.median)} € por m²{zoneMode === "alquiler" ? " al mes" : ""} en los anuncios de tu
+                    calle.
+                  </p>
+                  <p>
+                    {fromPortal?.matched
+                      ? `${fromPortal.matched} pisos de tamaño parecido al tuyo`
+                      : `${zone.listings.count} pisos ${zoneMode === "alquiler" ? "en alquiler" : "en venta"}`}{" "}
+                    a menos de {zone.listings.radius} metros, publicados en idealista. Es el precio que se pide, no el de cierre:
+                    en la venta se suele cerrar algo por debajo.
+                  </p>
+                </>
               ) : (
                 <>
                   <p className="text-ink-2">
-                    {formatDecimal(result.unitPrice ?? 0)} € por m²
+                    {formatUnitPrice(result.unitPrice ?? 0)} € por m²
                     {zoneMode === "alquiler" ? " al mes" : ""} en {zoneName}.
                   </p>
                   <p>

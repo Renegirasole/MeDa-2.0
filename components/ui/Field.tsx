@@ -171,3 +171,36 @@ export function Segmented<T extends string>({ label, value, options, onChange }:
     </fieldset>
   );
 }
+
+interface CheckFieldProps {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  hint?: string;
+}
+
+/** Sí o no de un vistazo. Toda la fila es pulsable y llega a los 44 px de alto. */
+export function CheckField({ label, checked, onChange, hint }: CheckFieldProps) {
+  const id = useId();
+  return (
+    <label
+      htmlFor={id}
+      className={cn(
+        "flex min-h-11 cursor-pointer items-center gap-3 rounded-(--radius-control) border px-3.5 py-2 transition-colors duration-150",
+        checked ? "border-brand-600 bg-brand-50/60" : "border-line-strong bg-surface hover:border-ink/30",
+      )}
+    >
+      <input
+        id={id}
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="size-5 shrink-0 accent-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+      />
+      <span className="flex flex-col">
+        <span className="text-[15px] text-ink">{label}</span>
+        {hint && <span className={hintClass}>{hint}</span>}
+      </span>
+    </label>
+  );
+}

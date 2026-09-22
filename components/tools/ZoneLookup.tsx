@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import type { Address, Dwelling, Zone } from "@/lib/zonas/tipos";
+import type { Address, Dwelling, ListingStats, Zone, ZoneMode } from "@/lib/zonas/tipos";
 import { Button } from "@/components/ui/Button";
 import { SelectField } from "@/components/ui/Field";
 import { IconCheck, IconWarning } from "@/components/ui/icons";
@@ -11,6 +11,8 @@ export interface ZoneResult {
   address: Address;
   zone: Zone;
   dwellings: Dwelling[];
+  /** Anuncios de la zona ahora mismo (idealista), si hay llave y cobertura */
+  listings: ListingStats | null;
   sources: { rentYear: number; salePeriod: string };
 }
 
@@ -19,11 +21,13 @@ export interface ZoneResult {
  * viviendas del edificio (Catastro). La persona solo escribe su calle.
  */
 export function ZoneLookup({
+  mode,
   result,
   onResult,
   onDwelling,
   selectedRef,
 }: {
+  mode: ZoneMode;
   result: ZoneResult | null;
   onResult: (r: ZoneResult | null) => void;
   onDwelling: (d: Dwelling | null) => void;
@@ -83,7 +87,7 @@ export function ZoneLookup({
     setOpen(false);
     setState("loading");
     try {
-      const params = new URLSearchParams({ muni: a.muniCode, lat: String(a.lat), lng: String(a.lng) });
+      const params = new URLSearchParams({ muni: a.muniCode, lat: String(a.lat), lng: String(a.lng), modo: mode });
       if (a.refCatastral) params.set("rc", a.refCatastral);
       const res = await fetch(`/api/zona?${params}`);
       if (!res.ok) throw new Error("zona");

@@ -1,4 +1,5 @@
-import type { Zone, ZoneEstimate, ZoneMode } from "./tipos";
+import { MIN_SAMPLE, quantile } from "./estadistica";
+import type { ListingStats, Zone, ZoneEstimate, ZoneMode } from "./tipos";
 
 /**
  * Precio estimado a partir de los datos de zona. Reglas públicas (ver /como-calculamos):
@@ -29,6 +30,36 @@ export function saleUnitPrice(zone: Zone, year: number | null): number | null {
 
 /** €/m² de alquiler al mes del barrio (mediana). */
 export const rentUnitPrice = (zone: Zone): number | null => zone.rent?.median ?? null;
+
+/**
+ * Precio con los anuncios que hay ahora mismo cerca (idealista). Es precio de salida,
+ * el que se pide: para decidir a cuánto poner el tuyo es justo lo que interesa.
+ *
+ * Un estudio de 40 m² vale más por metro que un piso de 120, así que, si hay bastantes,
+ * solo se comparan los anuncios de tamaño parecido al tuyo (±35 %).
+ */
+export function estimateFromListings(stats: ListingStats, mode: ZoneMode, area: number): ZoneEstimate | null {
+  if (area <= 0) return null;
+  const step = mode === "alquiler" ? 10 : 1000;
+
+  const similar = (stats.sample ?? []).filter(([size]) => size >= area * 0.65 && size <= area * 1.35).map(([, unit]) => unit);
+  const use =
+    similar.length >= MIN_SAMPLE
+      ? (() => {
+          const sorted = [...similar].sort((a, b) => a - b);
+          return { p25: quantile(sorted, 0.25), median: quantile(sorted, 0.5), p75: quantile(sorted, 0.75), matched: similar.length };
+        })()
+      : { p25: stats.p25, median: stats.median, p75: stats.p75, matched: 0 };
+
+  return {
+    mode,
+    unitPrice: use.median,
+    quick: roundTo(use.p25 * area, step),
+    market: roundTo(use.median * area, step),
+    ambitious: roundTo(use.p75 * area, step),
+    matched: use.matched,
+  };
+}
 
 export function estimate(zone: Zone, mode: ZoneMode, area: number, year: number | null = null): ZoneEstimate | null {
   if (area <= 0) return null;

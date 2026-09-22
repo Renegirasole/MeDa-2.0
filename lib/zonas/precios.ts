@@ -15,10 +15,12 @@ interface Row {
   p: string;
   r: [number, number, number, number, number | null] | null;
   s: [number, number | null, number | null] | null;
+  /** Valor tasado de los últimos trimestres, en el orden de `meta.quarters` */
+  h?: Array<number | null> | null;
 }
 
 const DB = MUNIS as unknown as {
-  meta: { rentYear: number; salePeriod: string; nationalSale: number | null };
+  meta: { rentYear: number; salePeriod: string; nationalSale: number | null; quarters: string[] };
   municipios: Record<string, Row>;
   provincias: Record<string, { n: string; r: Row["r"]; s: number | null }>;
 };
@@ -49,6 +51,15 @@ export function townSlug(name: string): string {
     .replace(/^-|-$/g, "");
 }
 
+export interface PriceHistory {
+  /** "3T 2023", "4T 2023"… */
+  labels: string[];
+  values: number[];
+  /** Cuánto ha subido o bajado en el periodo, en tanto por uno */
+  change: number;
+  years: number;
+}
+
 export interface Town {
   code: string;
   slug: string;
@@ -66,6 +77,29 @@ export interface Town {
   /** €/m² de venta de la provincia y de España */
   provUnit: number | null;
   nationalUnit: number | null;
+  /** Evolución del valor tasado en los últimos trimestres */
+  history: PriceHistory | null;
+}
+
+/** "T2A2026" → "2T 2026" */
+const quarterLabel = (q: string) => {
+  const m = /^T(\d)A(\d{4})$/.exec(q);
+  return m ? `${m[1]}T ${m[2]}` : q;
+};
+
+function buildHistory(h: Array<number | null> | null | undefined): PriceHistory | null {
+  if (!h) return null;
+  const labels: string[] = [];
+  const values: number[] = [];
+  DB.meta.quarters.forEach((q, i) => {
+    const v = h[i];
+    if (typeof v === "number") {
+      labels.push(quarterLabel(q));
+      values.push(v);
+    }
+  });
+  if (values.length < 4) return null;
+  return { labels, values, change: values[values.length - 1] / values[0] - 1, years: Math.round(((values.length - 1) / 4) * 10) / 10 };
 }
 
 const town = (code: string, row: Row): Town | null => {
@@ -84,6 +118,7 @@ const town = (code: string, row: Row): Town | null => {
     typicalArea: row.r?.[4] ?? null,
     provUnit: prov?.s ?? null,
     nationalUnit: DB.meta.nationalSale,
+    history: buildHistory(row.h),
   };
 };
 

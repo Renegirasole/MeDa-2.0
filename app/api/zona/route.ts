@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { findZone, ZONE_SOURCES } from "@/lib/zonas/datos";
 import { buildingDwellings, searchAddresses } from "@/lib/zonas/fuentes";
+import { listingStats } from "@/lib/zonas/portales";
+import type { ZoneMode } from "@/lib/zonas/tipos";
 
 /**
  * Tasación por zona.
@@ -38,16 +40,14 @@ export async function GET(req: Request) {
   if (!zone) return bad("No tenemos datos de esa zona.", 404);
 
   const rc = p.get("rc");
-  let dwellings: Awaited<ReturnType<typeof buildingDwellings>> = [];
-  if (rc) {
-    try {
-      dwellings = await buildingDwellings(rc);
-    } catch {
-      dwellings = []; // El Catastro se cae a ratos: se siguen pudiendo meter los metros a mano.
-    }
-  }
+  const mode: ZoneMode = p.get("modo") === "alquiler" ? "alquiler" : "venta";
+  // El Catastro se cae a ratos y el portal puede no estar configurado: ninguno es imprescindible.
+  const [dwellings, listings] = await Promise.all([
+    rc ? buildingDwellings(rc).catch(() => []) : Promise.resolve([]),
+    Number.isFinite(lat) && Number.isFinite(lng) ? listingStats(mode, lat, lng).catch(() => null) : Promise.resolve(null),
+  ]);
 
   // La zona va entera: son datos públicos y agregados, y así el precio se recalcula
   // en el navegador mientras se cambian los metros, sin volver a preguntar.
-  return NextResponse.json({ zone, dwellings, sources: ZONE_SOURCES }, { headers: { "Cache-Control": CACHE } });
+  return NextResponse.json({ zone, dwellings, listings, sources: ZONE_SOURCES }, { headers: { "Cache-Control": CACHE } });
 }
