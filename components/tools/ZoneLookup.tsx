@@ -42,6 +42,23 @@ export function ZoneLookup({
   const box = useRef<HTMLDivElement>(null);
   const skip = useRef(false);
 
+  // Si la ciudad que ha escrito no sale en ninguna sugerencia, es que la calle no se llama así allí.
+  const missingTown = (() => {
+    if (options.length === 0) return null;
+    const plain = (t: string) =>
+      t
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+    const words = plain(query).split(/[^a-z0-9]+/).filter((w) => w.length > 3 && !/^\d+$/.test(w));
+    if (words.length === 0) return null;
+    const where = options.map((a) => plain(`${a.muniName} ${a.provName} ${a.postalCode}`)).join(" ");
+    const last = words[words.length - 1];
+    if (where.includes(last)) return null;
+    const typed = query.trim().split(/[,\s]+/).pop() ?? "";
+    return typed ? typed[0].toUpperCase() + typed.slice(1) : null;
+  })();
+
   useEffect(() => {
     if (skip.current) {
       skip.current = false;
@@ -215,9 +232,16 @@ export function ZoneLookup({
           No hemos podido consultar la dirección. Prueba otra vez o escribe los metros a mano.
         </p>
       )}
-      <p className="text-[13px] leading-snug text-muted">
-        Escribe calle, número y ciudad. No guardamos la dirección: solo la usamos para saber el barrio.
-      </p>
+      {missingTown ? (
+        <p className="text-[13px] leading-snug text-caution-700">
+          No encontramos esa calle en {missingTown}. Prueba con el nombre completo («Gran Vía Marqués del Turia 45») o con el
+          código postal.
+        </p>
+      ) : (
+        <p className="text-[13px] leading-snug text-muted">
+          Escribe calle, número y ciudad. No guardamos la dirección: solo la usamos para saber el barrio.
+        </p>
+      )}
     </div>
   );
 }
