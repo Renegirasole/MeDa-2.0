@@ -1,6 +1,6 @@
-import type { AffordabilityResult, FactorId, ScoreFactor } from "@/lib/engine";
+import { STRESS, type AffordabilityResult, type FactorId, type ScoreFactor } from "@/lib/engine";
 import { FLAG_COPY } from "@/lib/copy";
-import { formatEUR, formatMonths, formatPct } from "@/lib/format";
+import { formatEUR, formatMonths, formatPct, formatScore } from "@/lib/format";
 
 /**
  * Lectura rápida del resultado para la interfaz.
@@ -39,6 +39,9 @@ export function weakestFactor(r: AffordabilityResult): ScoreFactor {
 
 /** Una frase: por qué sale esta nota. */
 export function mainReason(r: AffordabilityResult): string {
+  if (r.appliedCap?.flag === "stress_fragile") {
+    return `Hoy te saldrían los números, pero con poco margen: si tus ingresos bajaran un ${formatPct(STRESS.incomeDrop)} o subiera el interés, tu nota caería a ${formatScore(r.stressScore)}.`;
+  }
   if (r.appliedCap) return FLAG_COPY[r.appliedCap.flag];
   const weakest = weakestFactor(r);
   if (weakest.score >= 8) {

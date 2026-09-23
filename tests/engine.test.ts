@@ -38,15 +38,58 @@ test("cuota francesa coincide con la fórmula de referencia", () => {
   assert.equal(loanPayment(12000, 0, 12), 1000);
 });
 
-test("ejemplo de la home: 16.000 € da 'Sí, te da'", () => {
-  const r = evaluateOne(profile, car(16000), 0.2);
+test("un coche holgado para el perfil sí aprueba", () => {
+  const r = evaluateOne(profile, car(9000), 0.2);
   assert.ok(r.score >= 7, `nota ${r.score}`);
   assert.equal(r.verdict, "yes");
+});
+
+test("ejemplo de la home: 16.000 € se queda en 'justo'", () => {
+  // Se lleva el 28,8 % del sueldo con una referencia del 20 %: por encima de lo
+  // recomendable, así que no puede salir un «sí» limpio.
+  const r = evaluateOne(profile, car(16000), 0.2);
+  assert.equal(r.verdict, "tight");
+  assert.ok(r.flags.includes("over_guideline"));
 });
 
 test("el ejemplo original de 30.000 € no llega al aprobado", () => {
   const r = evaluateOne(profile, car(30000), 0.2);
   assert.ok(r.score < 7, `nota ${r.score}`);
+});
+
+test("el colchón no compensa una cuota desproporcionada", () => {
+  // Mucho ahorro (colchón 10/10) pero la compra se lleva el doble de lo
+  // recomendable: con media geométrica ya no puede aprobar.
+  const rico = { ...profile, savings: 300000 };
+  const r = evaluateOne(rico, car(45000), 0.2);
+  assert.ok(r.factors.find((f) => f.id === "cushion")!.score >= 9);
+  assert.ok(r.score < 5, `nota ${r.score}`);
+});
+
+test("pasarse de la referencia pone un tope a la nota", () => {
+  // Con ahorros de sobra, lo único que puede frenar la nota es el esfuerzo.
+  const rico = { ...profile, savings: 300000 };
+  for (const price of [30000, 40000, 60000]) {
+    const r = evaluateOne(rico, car(price), 0.2);
+    assert.ok(r.effortRatio > 0.2 * 1.5, `esfuerzo ${r.effortRatio}`);
+    assert.ok(r.score <= 4, `${price} → nota ${r.score}`);
+  }
+  // Y en la zona en la que el tope muerde de verdad, queda registrado.
+  const justo = evaluateOne(rico, car(24000), 0.2);
+  assert.ok(justo.effortRatio > 0.2 * 1.25);
+  assert.ok(justo.score <= 5.5, `nota ${justo.score}`);
+});
+
+test("la prueba de estrés limita lo que solo aguanta si nada va mal", () => {
+  const r = evaluateOne(profile, car(20000), 0.2);
+  assert.ok(r.stressScore <= r.rawScore, "el escenario malo nunca puntúa más");
+  assert.ok(r.score <= r.stressScore + 2 + 1e-9, `nota ${r.score} vs estrés ${r.stressScore}`);
+});
+
+test("la prueba de estrés no castiga una compra holgada", () => {
+  const r = evaluateOne({ ...profile, savings: 30000 }, car(6000), 0.2);
+  assert.equal(r.verdict, "yes");
+  assert.ok(!r.flags.includes("stress_fragile"));
 });
 
 test("la nota es monótona: más caro nunca puntúa mejor", () => {

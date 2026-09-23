@@ -70,7 +70,13 @@ export default async function RentSalaryPage({ params }: { params: Params }) {
             quieres ir holgado (regla del {strict}), <strong className="font-semibold">{formatEUR(r.strictRent)}</strong>.
           </p>
           <dl className="mt-8 grid grid-cols-1 gap-6 border-t border-night-line pt-6 sm:grid-cols-3">
-            <Stat tone="night" lead label="Alquiler máximo" value={formatEUR(r.maxRent)} hint={`Con suministros, el ${guideline}`} />
+            <Stat
+              tone="night"
+              lead
+              label="Alquiler máximo"
+              value={formatEUR(r.maxRent)}
+              hint={r.maxRent < r.maxRentRule ? `La cuenta rápida da ${formatEUR(r.maxRentRule)}` : `Con suministros, el ${guideline}`}
+            />
             <Stat tone="night" lead label="Con la regla del 30 %" value={formatEUR(r.strictRent)} hint="Más margen cada mes" />
             <Stat tone="night" lead label="Para entrar" value={formatEUR(r.moveIn)} hint="Fianza + primer mes" />
           </dl>
@@ -81,8 +87,15 @@ export default async function RentSalaryPage({ params }: { params: Params }) {
         <p>
           Lo sano es que la vivienda (alquiler y suministros) no se lleve más del {guideline} de lo que cobras. Con{" "}
           {formatEUR(salary)} son {formatEUR(salary * RENT.guideline)}; quitando unos {formatEUR(R.utilities)} de luz, agua, gas
-          e internet, quedan {formatEUR(r.maxRent)} para el alquiler.
+          e internet, quedan {formatEUR(r.maxRentRule)} para el alquiler.
         </p>
+        {r.maxRent < r.maxRentRule && (
+          <p>
+            Esa es la cuenta rápida. La calculadora mira además cuánto te queda libre cada mes, el colchón y qué pasaría si tus
+            ingresos bajaran, y con eso el aprobado se queda en {formatEUR(r.maxRent)}: {formatEUR(r.maxRentRule - r.maxRent)}{" "}
+            menos. Es la cifra que damos arriba.
+          </p>
+        )}
         <p>
           La regla del {strict} es más prudente: te deja {formatEUR(r.maxRent - r.strictRent)} más libres cada mes para ahorrar o
           para imprevistos. Si vives en una ciudad cara y no llegas, compartir piso o ir un poco más lejos suele ser mejor que

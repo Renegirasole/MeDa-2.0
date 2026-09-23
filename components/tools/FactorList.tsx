@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { AffordabilityResult } from "@/lib/engine";
+import { STRESS, type AffordabilityResult } from "@/lib/engine";
 import { FACTOR_COPY, FLAG_COPY } from "@/lib/copy";
 import { factorReference, factorValue } from "@/lib/explain/insight";
 import { formatPct, formatScore } from "@/lib/format";
@@ -46,11 +46,21 @@ export function FactorList({ result }: { result: AffordabilityResult }) {
             Nota ={" "}
             {result.factors.map((f, i) => (
               <span key={f.id} className="num">
-                {i > 0 && " + "}
-                {formatScore(f.score)} × {formatPct(f.weight)}
+                {i > 0 && " × "}
+                {formatScore(f.score)}
+                <sup>{formatPct(f.weight)}</sup>
               </span>
             ))}{" "}
             = <strong className="num text-ink">{formatScore(result.rawScore)}</strong>
+          </p>
+          <p className="mt-2">
+            Los tres factores se multiplican, no se suman: así un factor bajo no se compensa con otros altos. Tener
+            colchón de sobra no hace pequeña una cuota grande.
+          </p>
+          <p className="mt-2">
+            Prueba de estrés: si tus ingresos bajaran un {formatPct(STRESS.incomeDrop)}
+            {result.monthlyPayment > 0 ? " (o subiera el interés de un préstamo largo)" : ""}, la nota sería{" "}
+            <span className="num text-ink">{formatScore(result.stressScore)}</span>.
           </p>
           {result.appliedCap && (
             <p className="mt-2">

@@ -89,6 +89,13 @@ export default async function CarSalaryPage({ params }: { params: Params }) {
       }
     >
       <GuideSection id="calculo" title="Cómo sale el precio">
+        {c.maxPrice < c.maxPriceRule && (
+          <p>
+            La cuenta rápida del {guideline} daría {formatEUR(c.maxPriceRule)}, pero la calculadora mira además el margen que
+            te queda, el colchón y qué pasaría si tus ingresos bajaran, y con eso el aprobado se queda en{" "}
+            {formatEUR(c.maxPrice)}. Es la cifra que damos arriba.
+          </p>
+        )}
         <p>
           La referencia de MeDa para el coche es el {guideline} de tu sueldo, contando todo lo que cuesta al mes, no solo la
           letra. Con {formatEUR(salary)}, son {formatEUR(c.monthlyBudget)}.

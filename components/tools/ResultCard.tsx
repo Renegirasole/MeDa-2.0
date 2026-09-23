@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import type { AffordabilityResult } from "@/lib/engine";
+import { STRESS, type AffordabilityResult } from "@/lib/engine";
 import { mainReason } from "@/lib/explain/insight";
-import { formatEUR, formatMonths, formatPct } from "@/lib/format";
+import { formatEUR, formatMonths, formatPct, formatScore } from "@/lib/format";
 import { DEFAULT_PROFILE } from "@/lib/storage/profile";
 import { Card } from "@/components/ui/Card";
 import { ScoreScale } from "@/components/ui/ScoreScale";
@@ -92,6 +92,16 @@ export function ResultCard({
           <span>
             <strong className="font-semibold">Te da, pero justo en esfuerzo:</strong> se lleva el {formatPct(result.effortRatio)} de tu
             sueldo y lo recomendable es como mucho el {formatPct(result.guideline)}.
+          </span>
+        </p>
+      )}
+      {/* Lo que aguanta hoy pero no aguanta un mal año también se avisa a la vista */}
+      {!example && result.flags.includes("stress_fragile") && result.appliedCap?.flag !== "stress_fragile" && (
+        <p className="mt-4 flex items-start gap-2 rounded-xl bg-caution-50 px-3 py-2.5 text-[14px] leading-snug text-caution-700">
+          <IconWarning size={18} className="mt-px shrink-0" aria-hidden="true" />
+          <span>
+            <strong className="font-semibold">Solo te sale bien si todo va bien:</strong> si tus ingresos bajaran un{" "}
+            {formatPct(STRESS.incomeDrop)}, tu nota caería a {formatScore(result.stressScore)}.
           </span>
         </p>
       )}

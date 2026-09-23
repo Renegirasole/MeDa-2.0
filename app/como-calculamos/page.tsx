@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CAPS, CUSHION_CURVE, EFFORT_CURVE, MARGIN_CURVE, VERDICT_THRESHOLDS, WEIGHTS } from "@/lib/engine";
+import { CAPS, CUSHION_CURVE, EFFORT_CAPS, EFFORT_CURVE, MARGIN_CURVE, STRESS, VERDICT_THRESHOLDS, WEIGHTS } from "@/lib/engine";
 import { CATEGORIES } from "@/lib/data/categories";
 import { FLAG_COPY, VERDICT_COPY } from "@/lib/copy";
 import { ZONE_SOURCES } from "@/lib/zonas/datos";
@@ -51,9 +51,26 @@ export default function MethodPage() {
         </section>
 
         <section className="border-t border-line pt-8">
+          <h2 className="text-2xl font-semibold tracking-[-0.02em] text-ink">Cómo se juntan las tres</h2>
+          <div className="mt-4 flex flex-col gap-4 text-[15px] leading-relaxed text-ink-2">
+            <p>
+              No hacemos la media. Elevamos cada factor a su peso y los multiplicamos: nota = esfuerzo
+              <sup>{formatPct(WEIGHTS.effort)}</sup> × margen<sup>{formatPct(WEIGHTS.margin)}</sup> × colchón
+              <sup>{formatPct(WEIGHTS.cushion)}</sup>.
+            </p>
+            <p>
+              <strong className="text-ink">Por qué multiplicamos.</strong> Con una media, un factor malo se tapa con dos
+              buenos, y salían aprobados absurdos: una cuota enorme perdonada por tener muchos ahorros. Pero el ahorro es
+              dinero que se gasta una vez y la cuota vuelve cada mes. Multiplicando, un factor bajo arrastra la nota
+              entera, que es justo lo que pasa en la vida real.
+            </p>
+          </div>
+        </section>
+
+        <section className="border-t border-line pt-8">
           <h2 className="text-2xl font-semibold tracking-[-0.02em] text-ink">Topes</h2>
           <p className="mt-3 text-[15px] leading-relaxed text-ink-2">
-            Aunque la media salga alta, hay situaciones en las que no te diremos que te da:
+Aunque el resto salga bien, hay situaciones en las que no te diremos que te da:
           </p>
           <ul className="mt-4 flex flex-col gap-2 text-[15px] text-ink-2">
             {(Object.keys(CAPS) as Array<keyof typeof CAPS>).map((k) => (
@@ -63,6 +80,37 @@ export default function MethodPage() {
               </li>
             ))}
           </ul>
+        </section>
+
+        <section className="border-t border-line pt-8">
+          <h2 className="text-2xl font-semibold tracking-[-0.02em] text-ink">Pasarse de la referencia</h2>
+          <p className="mt-3 text-[15px] leading-relaxed text-ink-2">
+            La referencia de cada categoría es un techo, no una meta. Cuanto más la pasas, más baja el tope de tu nota:
+          </p>
+          <ul className="mt-4 flex flex-col gap-2 text-[15px] text-ink-2">
+            {EFFORT_CAPS.map(([times, max]) => (
+              <li key={times} className="flex justify-between gap-4 border-b border-line/70 pb-2">
+                <span>Más de {formatPct(times)} de la referencia de tu categoría</span>
+                <span className="shrink-0 tabular-nums text-ink">máx. {formatScore(max)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="border-t border-line pt-8">
+          <h2 className="text-2xl font-semibold tracking-[-0.02em] text-ink">La prueba de estrés</h2>
+          <div className="mt-3 flex flex-col gap-3 text-[15px] leading-relaxed text-ink-2">
+            <p>
+              Calculamos tu nota dos veces más, cada una con algo yendo mal: que tus ingresos bajen un{" "}
+              {formatPct(STRESS.incomeDrop)}, y que el interés suba {formatScore(STRESS.rateRise)} puntos si tu préstamo
+              dura más de {STRESS.longTermMonths / 12} años, que es donde el tipo suele ser variable. Nos quedamos con la
+              peor de las dos, no con las dos a la vez: la idea es comprobar que aguantas un golpe, no una tormenta.
+            </p>
+            <p>
+              Tu nota final no puede separarse de esa nota estresada más de {formatScore(STRESS.maxGap)} puntos. Si una
+              compra solo te sale bien mientras nada cambie, no te vamos a decir que te da.
+            </p>
+          </div>
         </section>
 
         <section className="border-t border-line pt-8">

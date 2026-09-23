@@ -4,8 +4,10 @@ import {
   CAPS,
   combineFactors,
   cushionFactor,
+  effortCap,
   effortFactor,
   marginFactor,
+  STRESS,
   strongestCap,
   verdictFor,
 } from "./scoring";
@@ -49,6 +51,32 @@ function itemCosts(p: PurchaseInput): ItemCosts {
 }
 
 /**
+ * Dos escenarios malos pero normales, cada uno por su lado: que tus ingresos
+ * bajen `STRESS.incomeDrop`, o que el interés suba `STRESS.rateRise` puntos en
+ * préstamos de más de `STRESS.longTermMonths` meses (hipotecas, donde el tipo
+ * suele ser variable). Se queda con el peor de los dos, no con los dos a la vez:
+ * la idea es comprobar que aguantas un golpe, no una tormenta perfecta.
+ * Usa la nota sin topes del escenario malo: los topes son escalones y aquí
+ * interesa cuánto se deteriora la compra, no volver a castigarla dos veces.
+ */
+function stressTest(profile: FinancialProfile, purchases: PurchaseInput[], guideline: number): number {
+  const lowerIncome: FinancialProfile = {
+    ...profile,
+    monthlyIncome: profile.monthlyIncome * (1 - STRESS.incomeDrop),
+  };
+  const higherRate = purchases.map((p) =>
+    p.termMonths >= STRESS.longTermMonths && p.price > p.downPayment
+      ? { ...p, annualRate: p.annualRate + STRESS.rateRise }
+      : p,
+  );
+  const scenarios = [evaluate(lowerIncome, purchases, guideline, false).rawScore];
+  if (higherRate.some((p, i) => p.annualRate !== purchases[i].annualRate)) {
+    scenarios.push(evaluate(profile, higherRate, guideline, false).rawScore);
+  }
+  return Math.min(...scenarios);
+}
+
+/**
  * Evalúa una o varias compras (Comprobar / Combinar) contra el perfil.
  * `guideline`: parte razonable de los ingresos para este tipo de gasto (0–1).
  */
@@ -56,6 +84,8 @@ export function evaluate(
   profile: FinancialProfile,
   purchases: PurchaseInput[],
   guideline: number,
+  /** Interno: en la propia prueba de estrés no se vuelve a estresar (evita la recursión). */
+  withStress = true,
 ): AffordabilityResult {
   const costs = purchases.map(itemCosts);
   const sum = (k: keyof ItemCosts) => costs.reduce((a, c) => a + c[k], 0);
@@ -96,7 +126,11 @@ export function evaluate(
   if (cushionRel < 0.5) cap("cushion_critical");
   else if (cushionRel < 1) cap("cushion_below_target");
 
-  if (effortRatio > guideline) flags.push("over_guideline");
+  if (effortRatio > guideline) {
+    flags.push("over_guideline");
+    const max = effortCap(effortRatio, guideline);
+    if (max !== null) caps.push({ flag: "over_guideline", max });
+  }
   if (
     purchases.some(
       (p) => p.termMonths > 0 && p.price > p.downPayment && p.annualRate >= HIGH_INTEREST_RATE,
@@ -106,6 +140,15 @@ export function evaluate(
   }
 
   const rawScore = round(combineFactors(factors), 1);
+
+  // Prueba de estrés: la misma compra con ingresos más bajos y, en préstamos
+  // largos, con el interés más alto. Lo que solo aguanta si nada va mal no aprueba.
+  const stressScore = withStress ? stressTest(profile, purchases, guideline) : rawScore;
+  if (withStress && rawScore > stressScore + STRESS.maxGap) {
+    flags.push("stress_fragile");
+    caps.push({ flag: "stress_fragile", max: round(stressScore + STRESS.maxGap, 1) });
+  }
+
   const cappedBy = strongestCap(caps);
   const appliedCap = cappedBy && rawScore > cappedBy.max ? cappedBy : null;
   const score = appliedCap ? appliedCap.max : rawScore;
@@ -114,6 +157,7 @@ export function evaluate(
     score,
     verdict: verdictFor(score),
     rawScore,
+    stressScore,
     appliedCap,
     factors,
     flags,
