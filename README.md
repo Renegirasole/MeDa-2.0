@@ -60,3 +60,6 @@ Nota 0–10 = 40 % esfuerzo mensual + 30 % margen que te queda + 30 % colchón t
 2. Sustituir URLs de `lib/affiliates.ts` por los deep links aprobados (Awin, Amazon, Booking, Skyscanner…).
 3. IA opcional: `NEXT_PUBLIC_AI_ENABLED=true` + `ANTHROPIC_API_KEY`. El rate limit de `/api/explain` es en memoria: con más de una instancia, moverlo a Upstash/Redis.
 4. Analítica sin cookies (Plausible/Umami) si se quiere medir clics salientes sin banner de consentimiento.
+5. Campañas de Google Ads: `NEXT_PUBLIC_GOOGLE_ADS_ID` (AW-…) monta la etiqueta con modo de consentimiento v2, y
+   `NEXT_PUBLIC_GOOGLE_ADS_PARTNER_LABEL` (la etiqueta de la acción de conversión) hace que el clic a partner cuente
+   como conversión. Sin las dos, no se carga nada de Google Ads.

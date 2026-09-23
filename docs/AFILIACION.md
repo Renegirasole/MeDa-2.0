@@ -13,10 +13,9 @@ Si la variable está vacía o no es válida, el enlace funciona igual, pero va d
 
 | Variable | Partner | Dónde aparece |
 | --- | --- | --- |
-| `NEXT_PUBLIC_AFF_IAHORRO` | iAhorro (hipotecas) | Comprar vivienda, primer enlace |
-| `NEXT_PUBLIC_AFF_HELPMYCASH` | HelpMyCash (hipotecas) | Comprar vivienda |
-| `NEXT_PUBLIC_AFF_RASTREATOR` | Rastreator (seguros de coche, moto y hogar) | Coche, moto, alquiler |
-| `NEXT_PUBLIC_AFF_ACIERTO` | Acierto (seguro de coche) | Coche |
+| `NEXT_PUBLIC_AFF_H2B` | h2b Hipotecas (bróker) | Comprar vivienda, primer enlace |
+| `NEXT_PUBLIC_AFF_LINEADIRECTA` | Línea Directa (seguros de coche, moto y hogar) | Coche, moto, alquiler |
+| `NEXT_PUBLIC_AFF_ASSISTCARD` | Assist Card (seguro de viaje) | Viaje, /viajes |
 | `NEXT_PUBLIC_AFF_BOOKING` | Booking.com | Viajes |
 | `NEXT_PUBLIC_AFF_SKYSCANNER` | Skyscanner | Viajes |
 | `NEXT_PUBLIC_AFF_COCHESNET` | coches.net y motos.net | Coche, moto |
@@ -37,12 +36,32 @@ La tabla de pagos es orientativa y hay que confirmarla al entrar en cada program
 
 | Prioridad | Programa | Qué se cobra (aprox.) | Cómo entrar | Coste |
 | --- | --- | --- | --- | --- |
-| 1 | **iAhorro / HelpMyCash** (hipotecas) | 30–150 € por contacto válido | Buscarlos en Awin. Si no están, escribir a su programa de partners desde su web («Colabora con nosotros» o «Partners») | Gratis |
-| 2 | **Rastreator / Acierto** (seguros) | 5–40 € por contacto | Buscarlos en Awin. Si no, en su web de afiliados | Gratis |
+| 1 | **h2b Hipotecas** (bróker) | Por solicitud válida; aprueba el 71,43 % | Awin, programa «H2B Hipotecas ES» | Gratis |
+| 2 | **Assist Card / Allianz / Europ Assistance** (seguro de viaje) | Comisión sobre la póliza | Awin, región España | Gratis |
 | 3 | **Amazon Afiliados** | 1–10 % de la venta | afiliados.amazon.es | Gratis |
 | 4 | **Booking.com** | 4–6 % de la reserva | Programa de afiliados de Booking | Gratis |
 | 5 | **Awin** (la red donde están muchos) | Según programa | awin.com/es → Soy publisher | **Depósito de unos 5 €** que devuelven con el primer pago. **Avisad antes de pagarlo.** |
 | 6 | Skyscanner, coches.net, AutoScout24, Fotocasa | Poco o sin programa abierto | Solo si sobra tiempo | — |
+
+### Comparadores: no son partners, son competencia
+
+iAhorro, HelpMyCash, Rastreator y Acierto estuvieron enlazados aquí hasta el 23/09/2026. Ninguno tiene programa de
+afiliación para webs, y ninguno aparece en Awin España. Son comparadores: ganan dinero igual que MeDa, mandando usuarios
+a los bancos y aseguradoras. Enlazarlos era regalarles tráfico. Los cuatro están fuera del código desde esa fecha.
+
+- iAhorro solo tiene un «programa de recomendados» para quien ya fue cliente suyo, que paga en cheque regalo y solo si la
+  hipoteca llega a firmarse.
+- La página «Colabora con HelpMyCash» va dirigida a empresas financieras que quieren anunciarse en ellos.
+
+Sustitutos, todos programas reales de Awin España (hay que solicitarlos y esperar aprobación):
+
+| Antes | Ahora | Dónde | Ojo |
+| --- | --- | --- | --- |
+| iAhorro, HelpMyCash | h2b Hipotecas | Comprar vivienda | Aprueba el 71,43 % de los leads |
+| Rastreator, Acierto | Línea Directa | Coche, moto, alquiler | Aprueba solo el 12,66 %: de cada 8 contactos pagan 1 |
+| — | Assist Card | Viaje y /viajes | Aprueba el 96 %, convierte el 11,12 % |
+
+Otro candidato sin usar: SantaLucía ES (hogar y decesos), con el EPC más alto de la lista pero un 16,74 % de aprobación.
 
 ### Datos que os pedirán (tenerlos a mano)
 
@@ -70,6 +89,9 @@ La tabla de pagos es orientativa y hay que confirmarla al entrar en cada program
 - El partner **solo aparece si la compra te da** o si hay un plan que aprueba. Con «no te da» no mandamos a comprar.
 - El aviso de afiliación sale siempre debajo de los enlaces.
 - La comisión **nunca** cambia la nota ni el orden de los planes.
+- Sí decide el orden de los enlaces a partners: primero el que tiene acuerdo con nosotros. Eso hay que decirlo en el aviso
+  que va debajo del bloque y en el aviso legal, porque la ley de consumo obliga a declarar cuando el pago influye en la
+  posición. Si algún día se cambia el orden, hay que cambiar también esos dos textos.
 - Los filtros de búsqueda usan el tope redondeado **hacia abajo**: nunca enseñamos un precio más alto que el que te da.
 
 ## Medición

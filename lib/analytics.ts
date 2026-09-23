@@ -1,6 +1,7 @@
 "use client";
 
 import { track as vercelTrack } from "@vercel/analytics";
+import { SITE } from "@/lib/site";
 
 /**
  * Único punto de medición. Sin cookies ni datos personales: nunca se envían
@@ -10,6 +11,7 @@ import { track as vercelTrack } from "@vercel/analytics";
  * - Vercel Analytics (siempre). En el plan Hobby solo cuenta visitas, no estos eventos.
  * - PostHog, si existe NEXT_PUBLIC_POSTHOG_KEY. Sin cookies ni almacenamiento: cada carga de
  *   página es un visitante anónimo nuevo y no se crean perfiles de persona.
+ * - Google Ads, solo el clic a partner y solo si hay campaña configurada.
  */
 export type AnalyticsEvent =
   | "calculo_empezado"
@@ -56,10 +58,26 @@ function sendPosthog(event: string, props?: Props) {
   }
 }
 
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void;
+  }
+}
+
+/** La conversión que importa para Ads es el clic a partner: es lo único que monetiza. */
+const ADS_CONVERSION =
+  SITE.googleAdsId && SITE.googleAdsPartnerLabel ? `${SITE.googleAdsId}/${SITE.googleAdsPartnerLabel}` : "";
+
+function sendGoogleAds(event: AnalyticsEvent, props?: Props) {
+  if (event !== "clic_partner" || !ADS_CONVERSION || typeof window === "undefined") return;
+  window.gtag?.("event", "conversion", { send_to: ADS_CONVERSION, partner: props?.partner, origen: props?.origen });
+}
+
 export function track(event: AnalyticsEvent, props?: Props) {
   try {
     vercelTrack(event, props);
     sendPosthog(event, props);
+    sendGoogleAds(event, props);
   } catch {
     // La medición nunca debe romper la herramienta.
   }
