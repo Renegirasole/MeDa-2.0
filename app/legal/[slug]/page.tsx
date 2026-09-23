@@ -127,14 +127,17 @@ type Params = Promise<{ slug: string }>;
 
 export const dynamicParams = false;
 
+/** Slugs legales, tambien usados por el sitemap. */
+export const LEGAL_SLUGS = Object.keys(PAGES);
+
 export function generateStaticParams() {
-  return Object.keys(PAGES).map((slug) => ({ slug }));
+  return LEGAL_SLUGS.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
   const page = PAGES[slug];
-  return page ? { title: page.title, robots: { index: false }, alternates: { canonical: `/legal/${slug}` } } : {};
+  return page ? { title: page.title, alternates: { canonical: `/legal/${slug}` } } : {};
 }
 
 export default async function LegalPage({ params }: { params: Params }) {
