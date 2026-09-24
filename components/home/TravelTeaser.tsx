@@ -1,7 +1,9 @@
-import { planTrip } from "@/lib/engine";
-import { DESTINATION_BY_ID, ORIGIN_BY_ID } from "@/lib/data/travel";
+import type { TripLineId } from "@/lib/engine";
+import { DESTINATION_BY_ID } from "@/lib/data/travel";
 import { TRIP_EXAMPLE } from "@/lib/data/examples";
 import { TIER_COPY, TRIP_LINE_COPY } from "@/lib/copy";
+import { CITY_BY_ID, GUIDE_BY_ID } from "@/lib/viajes/catalogo";
+import { addDays, planDetailedTrip, type LineKey } from "@/lib/viajes/plan";
 import { formatEUR } from "@/lib/format";
 import { ArrowGlyph, ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -9,10 +11,42 @@ import { Section } from "@/components/ui/Section";
 import { IconPlane } from "@/components/ui/icons";
 import { cn } from "@/components/ui/cn";
 
+/** Las 7 partidas del planificador, agrupadas en las 5 líneas de la tarjeta. */
+const GROUP: Record<LineKey, TripLineId> = {
+  access: "airport",
+  transfer: "airport",
+  main: "transport",
+  lodging: "lodging",
+  food: "food",
+  local: "activities",
+  activities: "activities",
+};
+const ORDER: TripLineId[] = ["airport", "transport", "lodging", "food", "activities"];
+
+/** Las cifras no dependen de la fecha, solo de las noches: cualquier fecha fija da lo mismo que /viajes. */
+const EXAMPLE_DEPART = "2026-01-12";
+
 export function TravelTeaser() {
-  const origin = ORIGIN_BY_ID[TRIP_EXAMPLE.origin];
-  const dest = DESTINATION_BY_ID[TRIP_EXAMPLE.destination];
-  const plans = planTrip(origin, dest, TRIP_EXAMPLE);
+  const origin = CITY_BY_ID[TRIP_EXAMPLE.origin];
+  const dest = GUIDE_BY_ID[TRIP_EXAMPLE.destination];
+  const { plans: detailed } = planDetailedTrip({
+    origin: { kind: "catalog", id: origin.id, name: origin.name },
+    destination: { kind: "catalog", id: dest.id, name: dest.name },
+    depart: EXAMPLE_DEPART,
+    return: addDays(EXAMPLE_DEPART, TRIP_EXAMPLE.nights),
+    travelers: TRIP_EXAMPLE.travelers,
+  });
+  const highlights = DESTINATION_BY_ID[dest.id]?.highlights;
+  const plans = detailed.map((plan) => {
+    const sums = new Map<TripLineId, number>();
+    for (const l of plan.lines) sums.set(GROUP[l.key], (sums.get(GROUP[l.key]) ?? 0) + l.amount);
+    return {
+      tier: plan.tier,
+      perPerson: plan.perPerson,
+      lines: ORDER.filter((id) => sums.has(id)).map((id) => ({ id, perPerson: Math.round((sums.get(id) ?? 0) / TRIP_EXAMPLE.travelers) })),
+      highlight: highlights?.[plan.tier][0] ?? dest.attractions[0]?.name ?? "",
+    };
+  });
   const href = `/viajes?o=c:${origin.id}&d=c:${dest.id}&n=${TRIP_EXAMPLE.nights}&p=${TRIP_EXAMPLE.travelers}`;
 
   return (
@@ -52,7 +86,7 @@ export function TravelTeaser() {
                   </div>
                 ))}
               </dl>
-              <p className="mt-5 border-t border-line pt-4 text-[14px] leading-snug text-ink-2">{plan.highlights[0]}</p>
+              <p className="mt-5 border-t border-line pt-4 text-[14px] leading-snug text-ink-2">{plan.highlight}</p>
             </div>
           ))}
         </div>

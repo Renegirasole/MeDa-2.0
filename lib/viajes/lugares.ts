@@ -1,11 +1,10 @@
-import { DESTINATIONS, ORIGINS } from "@/lib/data/travel";
-import type { DestinationRef, OriginRef } from "@/lib/engine";
+import { CITIES, GUIDES, type City, type Guide } from "./catalogo";
 
 /**
  * Lugares del mundo para el planificador de viajes.
  *
  * Todo lo de aquí es puro: ni red ni React. La llamada al buscador vive en
- * `lib/viajes/fuentes.ts` y la conversión a cifras, en `lib/viajes/resolver.ts`.
+ * `lib/viajes/fuentes.ts` y el cálculo del viaje, en `lib/viajes/plan.ts`.
  */
 
 /** Ciudad con aeropuerto, tal y como la devuelve el buscador mundial. */
@@ -94,21 +93,10 @@ function filter<T extends { name: string }>(items: readonly T[], q: string): T[]
 }
 
 export const searchOrigins = (q: string): CatalogSuggestion[] =>
-  filter(ORIGINS, q).map((o) => ({ id: o.id, name: o.name, detail: "España" }));
+  filter(CITIES, q).map((c) => ({ id: c.id, name: c.name, detail: c.province === c.name ? "España" : `${c.province}, España` }));
 
 export const searchDestinations = (q: string): CatalogSuggestion[] =>
-  filter(DESTINATIONS, q).map((d) => ({ id: d.id, name: d.name, detail: COUNTRY_NAME[d.country] ?? d.country }));
-
-/** Nombre en español de los países del catálogo curado. */
-const COUNTRY_NAME: Record<string, string> = {
-  ES: "España",
-  IT: "Italia",
-  FR: "Francia",
-  PT: "Portugal",
-  GB: "Reino Unido",
-  NL: "Países Bajos",
-  DE: "Alemania",
-};
+  filter(GUIDES, q).map((g) => ({ id: g.id, name: g.name, detail: g.countryName }));
 
 function nearest<T extends { lat: number; lon: number }>(items: readonly T[], place: Place): T | undefined {
   let best: { item: T; km: number } | undefined;
@@ -119,11 +107,11 @@ function nearest<T extends { lat: number; lon: number }>(items: readonly T[], pl
   return best?.item;
 }
 
-/** Ciudad de salida del catálogo que corresponde a un lugar del buscador. */
-export const catalogOrigin = (place: Place): OriginRef | undefined => nearest(ORIGINS, place);
+/** Ciudad de salida del catálogo que corresponde a un lugar del buscador (solo en España). */
+export const catalogOrigin = (place: Place): City | undefined => (place.countryCode === "ES" ? nearest(CITIES, place) : undefined);
 
-/** Destino del catálogo (con «qué ver» revisado a mano) que corresponde a un lugar del buscador. */
-export const catalogDestination = (place: Place): DestinationRef | undefined => nearest(DESTINATIONS, place);
+/** Destino con guía propia («qué ver») que corresponde a un lugar del buscador. */
+export const catalogDestination = (place: Place): Guide | undefined => nearest(GUIDES, place);
 
 // ——— Opciones del buscador ———
 
@@ -193,7 +181,7 @@ export function decodeSelection(raw: string | undefined | null, kind: "origin" |
   if (!raw) return null;
   if (raw.startsWith("c:")) {
     const id = raw.slice(2);
-    const known = (kind === "origin" ? ORIGINS : DESTINATIONS).find((c) => c.id === id);
+    const known = (kind === "origin" ? CITIES : GUIDES).find((c) => c.id === id);
     return known ? { kind: "catalog", id: known.id, name: known.name } : null;
   }
   if (!raw.startsWith("p:")) return null;

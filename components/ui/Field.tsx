@@ -130,6 +130,50 @@ export function SelectField<T extends string>({ label, value, options, onChange,
   );
 }
 
+interface DateFieldProps {
+  label: string;
+  /** YYYY-MM-DD */
+  value: string;
+  onChange: (v: string) => void;
+  /** YYYY-MM-DD */
+  min?: string;
+  /** YYYY-MM-DD */
+  max?: string;
+  error?: string | null;
+  className?: string;
+}
+
+/** Fecha con el selector nativo del sistema: en el móvil es el mejor que hay. */
+export function DateField({ label, value, onChange, min, max, error, className }: DateFieldProps) {
+  const id = useId();
+  return (
+    <div className={cn("flex flex-col gap-2", className)}>
+      <label htmlFor={id} className={labelClass}>
+        {label}
+      </label>
+      <div className={cn(controlBase, "h-12 px-3.5", error ? "border-alert-500" : "border-line-strong hover:border-ink/30")}>
+        <input
+          id={id}
+          type="date"
+          value={value}
+          min={min}
+          max={max}
+          required
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-error` : undefined}
+          onChange={(e) => e.target.value && onChange(e.target.value)}
+          className="num h-full w-full min-w-0 bg-transparent text-base text-ink outline-none"
+        />
+      </div>
+      {error && (
+        <p id={`${id}-error`} className="text-[13px] leading-snug font-medium text-alert-700">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 interface SegmentedProps<T extends string> {
   label: string;
   value: T;

@@ -101,8 +101,8 @@ export async function searchPlaces(term: string, locale = "es"): Promise<Place[]
 export interface FlightPrice {
   /** Ida y vuelta por persona, en euros */
   perPerson: number;
-  /** Mes consultado, YYYY-MM */
-  month: string;
+  /** false = el más barato del mes, porque no había datos de esas fechas exactas */
+  exactDates: boolean;
   airline: string | null;
   stops: number;
   link: string | null;
@@ -118,12 +118,16 @@ interface RawTicket {
   link?: string;
 }
 
-export const flightsUrl = (from: string, to: string, month: string, token: string): string =>
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+const MONTH = /^\d{4}-\d{2}$/;
+
+/** `departAt`/`returnAt` pueden ser un día (YYYY-MM-DD) o un mes entero (YYYY-MM). */
+export const flightsUrl = (from: string, to: string, departAt: string, returnAt: string, token: string): string =>
   `${PRICES}?${new URLSearchParams({
     origin: from,
     destination: to,
-    departure_at: month,
-    return_at: month,
+    departure_at: departAt,
+    return_at: returnAt,
     one_way: "false",
     currency: "eur",
     market: "es",
@@ -132,7 +136,7 @@ export const flightsUrl = (from: string, to: string, month: string, token: strin
     token,
   })}`;
 
-export function normalizeFlights(json: unknown, month: string, marker?: string): FlightPrice | null {
+export function normalizeFlights(json: unknown, exactDates: boolean, marker?: string): FlightPrice | null {
   if (!json || typeof json !== "object") return null;
   const { success, data } = json as { success?: boolean; data?: unknown };
   if (!success || !Array.isArray(data)) return null;
@@ -150,7 +154,7 @@ export function normalizeFlights(json: unknown, month: string, marker?: string):
 
   return {
     perPerson: Math.round(best.price as number),
-    month,
+    exactDates,
     airline: best.airline ?? null,
     stops: Math.max(best.transfers ?? 0, best.return_transfers ?? 0),
     link,
@@ -158,27 +162,41 @@ export function normalizeFlights(json: unknown, month: string, marker?: string):
   };
 }
 
-/** Mes siguiente al de hoy, en YYYY-MM. Es el horizonte típico de una escapada. */
+/** Mes siguiente al de hoy, en YYYY-MM. Horizonte típico de una escapada si no hay fechas. */
 export function nextMonth(today = new Date()): string {
   const d = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 1));
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
 /**
- * El vuelo ida y vuelta más barato visto para ese mes. Son precios que otras
- * personas han encontrado en búsquedas recientes (la API los guarda unos días),
- * no una cotización en directo: en la web se dice así.
+ * El vuelo ida y vuelta más barato visto para esa ruta: primero en tus fechas
+ * exactas y, si no hay datos, en ese mes. Son precios que otras personas han
+ * encontrado en búsquedas recientes (la API los guarda unos días), no una
+ * cotización en directo: en la web se dice así.
  */
-export async function flightPrice(from: string, to: string, month = nextMonth()): Promise<FlightPrice | null> {
+export async function flightPrice(from: string, to: string, depart?: string, ret?: string): Promise<FlightPrice | null> {
   const token = process.env.TRAVELPAYOUTS_TOKEN;
-  if (!token || !IATA.test(from) || !IATA.test(to) || !/^\d{4}-\d{2}$/.test(month)) return null;
+  if (!token || !IATA.test(from) || !IATA.test(to)) return null;
   const marker = process.env.TRAVELPAYOUTS_MARKER || undefined;
 
-  const res = await fetch(flightsUrl(from, to, month, token), {
-    headers: { "Accept-Encoding": "gzip, deflate" },
-    next: { revalidate: 3600 },
-    signal: AbortSignal.timeout(6000),
-  });
-  if (!res.ok) return null;
-  return normalizeFlights(await res.json(), month, marker);
+  const attempts: Array<[string, string, boolean]> =
+    depart && ret && DAY.test(depart) && DAY.test(ret)
+      ? [
+          [depart, ret, true],
+          [depart.slice(0, 7), ret.slice(0, 7), false],
+        ]
+      : [[nextMonth(), nextMonth(), false]];
+
+  for (const [departAt, returnAt, exact] of attempts) {
+    if (!(DAY.test(departAt) || MONTH.test(departAt))) continue;
+    const res = await fetch(flightsUrl(from, to, departAt, returnAt, token), {
+      headers: { "Accept-Encoding": "gzip, deflate" },
+      next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!res.ok) return null;
+    const price = normalizeFlights(await res.json(), exact, marker);
+    if (price) return price;
+  }
+  return null;
 }

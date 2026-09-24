@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { affiliate, dealLinks, travelLinks } from "../lib/affiliates";
+import { affiliate, attractionLink, dealLinks, tripSteps, type TripStepsContext } from "../lib/affiliates";
 
 // Intl separa "€" con espacio duro
 const plain = (s: string) => s.replace(/\s/g, " ");
@@ -55,51 +55,103 @@ test("sin contexto: textos genéricos y sin filtros", () => {
   assert.deepEqual(dealLinks("otro"), []);
 });
 
-const trip = (over: Partial<Parameters<typeof travelLinks>[0]> = {}) =>
-  travelLinks({
-    destination: "Lisboa",
-    country: "PT",
-    originCountry: "ES",
-    transferSlug: "lisbon",
-    esimSlug: null,
-    tier: "value",
-    flying: true,
-    travelers: 2,
-    ...over,
-  });
+const ctx = (over: Partial<TripStepsContext> = {}): TripStepsContext => ({
+  tier: "value",
+  mode: "avion",
+  origin: { name: "Sevilla", country: "ES" },
+  destination: { name: "Lisboa", country: "PT", iata: "LIS", civitatisSlug: "lisboa", transferSlug: "lisbon", esimSlug: null },
+  airport: { iata: "SVQ", city: "Sevilla" },
+  depart: "2026-10-15",
+  return: "2026-10-18",
+  travelers: 3,
+  ...over,
+});
 
-test("viajes: destino y personas ya puestos en Booking", () => {
-  const booking = trip().find((l) => l.partner === "Booking.com")!;
+const titles = (c: TripStepsContext) => tripSteps(c).map((s) => s.title);
+const allLinks = (c: TripStepsContext) => tripSteps(c).flatMap((s) => s.links);
+
+test("viajes: la reserva va en el orden en que se hace", () => {
+  assert.deepEqual(titles(ctx()), [
+    "Cómo llegar desde tu casa",
+    "Reserva los vuelos",
+    "Reserva el traslado al hotel",
+    "Reserva el alojamiento",
+    "Reserva actividades",
+    "Antes de salir",
+  ]);
+});
+
+test("viajes: Booking con fechas, personas y habitaciones ya puestas", () => {
+  const booking = allLinks(ctx()).find((l) => l.partner === "Booking.com")!;
   const u = new URL(booking.href);
   assert.equal(u.searchParams.get("ss"), "Lisboa");
-  assert.equal(u.searchParams.get("group_adults"), "2");
-  assert.equal(u.searchParams.get("no_rooms"), "1");
+  assert.equal(u.searchParams.get("checkin"), "2026-10-15");
+  assert.equal(u.searchParams.get("checkout"), "2026-10-18");
+  assert.equal(u.searchParams.get("group_adults"), "3");
+  assert.equal(u.searchParams.get("no_rooms"), "2");
   assert.equal(u.searchParams.get("nflt"), "class=3");
 });
 
-test("viajes: el plan barato lleva a hostales y ordena por precio", () => {
-  const links = trip({ tier: "budget" });
-  const booking = links.find((l) => l.partner === "Booking.com")!;
-  assert.equal(new URL(booking.href).searchParams.get("order"), "price");
+test("viajes: Skyscanner con aeropuerto de salida, fechas y cabina según el plan", () => {
+  const sky = (c: TripStepsContext) => new URL(allLinks(c).find((l) => l.partner === "Skyscanner")!.href);
+  const u = sky(ctx());
+  assert.equal(u.pathname, "/transporte/vuelos/svq/lis/261015/261018/");
+  assert.equal(u.searchParams.get("adultsv2"), "3");
+  assert.equal(u.searchParams.get("cabinclass"), "economy");
+  assert.equal(sky(ctx({ tier: "top" })).searchParams.get("cabinclass"), "premiumeconomy");
+});
+
+test("viajes: el vuelo real encontrado va el primero, solo en el plan barato", () => {
+  const flight = { href: "https://www.aviasales.com/search/SVQ1510LIS1810?marker=1", perPerson: 87 };
+  const [first] = tripSteps(ctx({ tier: "budget", flight }))[1].links;
+  assert.equal(first.partner, "Aviasales");
+  assert.equal(first.href, flight.href);
+  assert.ok(!tripSteps(ctx({ flight }))[1].links.some((l) => l.partner === "Aviasales"));
+});
+
+test("viajes: el plan barato no tiene traslado y lleva a hostales ordenados por precio", () => {
+  const c = ctx({ tier: "budget" });
+  assert.ok(!titles(c).includes("Reserva el traslado al hotel"));
+  const links = allLinks(c);
+  assert.equal(new URL(links.find((l) => l.partner === "Booking.com")!.href).searchParams.get("order"), "price");
   assert.ok(links.some((l) => l.partner === "Hostelworld"));
-  // Sin traslado en el plan barato: se va en transporte público.
-  assert.ok(!links.some((l) => l.partner === "Welcome Pickups"));
 });
 
-test("viajes: traslado solo si se vuela, y con la ciudad que cubre el partner", () => {
-  const flying = trip().find((l) => l.partner === "Welcome Pickups");
-  assert.ok(flying?.href.includes("/lisbon/"));
-  assert.ok(!trip({ flying: false }).some((l) => l.partner === "Welcome Pickups"));
+test("viajes: por tierra, tren con alternativa en BlaBlaCar; bus en el barato; ruta en coche si está cerca", () => {
+  const land = { mode: "tren" as const, airport: null, destination: { ...ctx().destination, name: "Madrid", country: "ES" } };
+  assert.deepEqual(tripSteps(ctx(land))[1].links.map((l) => l.partner), ["Google", "BlaBlaCar"]);
+  const bus = tripSteps(ctx({ ...land, tier: "budget", mode: "bus" }))[1];
+  assert.equal(bus.title, "Reserva bus o coche compartido");
+  assert.equal(new URL(bus.links[0].href).searchParams.get("db"), "2026-10-15");
+  assert.equal(tripSteps(ctx({ ...land, mode: "coche" }))[1].links[0].partner, "Google Maps");
+  // Sin salir de España no hay seguro de viaje ni eSIM: no hay paso «Antes de salir».
+  assert.ok(!titles(ctx(land)).includes("Antes de salir"));
 });
 
-test("viajes: sin ciudad de traslados, se busca en GetYourGuide", () => {
-  const links = trip({ transferSlug: null });
-  const transfer = links.find((l) => l.label.startsWith("Traslado"))!;
-  assert.equal(transfer.partner, "GetYourGuide");
+test("viajes: traslado en Welcome Pickups si cubren la ciudad; si no, GetYourGuide", () => {
+  const withSlug = tripSteps(ctx())[2].links[0];
+  assert.equal(withSlug.partner, "Welcome Pickups");
+  assert.ok(withSlug.href.includes("/lisbon/"));
+  const without = tripSteps(ctx({ destination: { ...ctx().destination, transferSlug: null } }))[2].links[0];
+  assert.equal(without.partner, "GetYourGuide");
 });
 
-test("viajes: la eSIM solo aparece cuando hace falta", () => {
-  assert.ok(!trip().some((l) => l.partner === "Airalo"));
-  const far = trip({ country: "TH", esimSlug: "thailand" }).find((l) => l.partner === "Airalo")!;
-  assert.equal(far.href.split("?")[0], "https://www.airalo.com/thailand-esim");
+test("viajes: Civitatis con su slug; sin slug, GetYourGuide", () => {
+  const civ = allLinks(ctx({ tier: "budget" })).find((l) => l.partner === "Civitatis")!;
+  assert.equal(civ.href.split("?")[0], "https://www.civitatis.com/es/lisboa/");
+  const noSlug = ctx({ tier: "budget", destination: { ...ctx().destination, civitatisSlug: null } });
+  assert.ok(!allLinks(noSlug).some((l) => l.partner === "Civitatis"));
+});
+
+test("viajes: antes de salir, eSIM si hace falta y seguro si se sale del país", () => {
+  const far = ctx({ destination: { ...ctx().destination, name: "Bangkok", country: "TH", esimSlug: "thailand" } });
+  const before = tripSteps(far).at(-1)!;
+  assert.equal(before.title, "Antes de salir");
+  assert.deepEqual(before.links.map((l) => l.partner), ["Airalo", "Assist Card"]);
+  assert.equal(before.links[0].href.split("?")[0], "https://www.airalo.com/thailand-esim");
+});
+
+test("viajes: entradas de cada atracción del «qué ver»", () => {
+  const link = attractionLink("Coliseo", "Roma");
+  assert.equal(new URL(link.href).searchParams.get("q"), "Coliseo Roma");
 });

@@ -222,141 +222,252 @@ const BY_CATEGORY: Record<CategorySlug, (ctx: DealContext) => OutboundLink[]> = 
 
 export const dealLinks = (slug: CategorySlug, ctx: DealContext = {}): OutboundLink[] => BY_CATEGORY[slug](ctx);
 
-/** Lo que hace falta para enlazar los servicios de un viaje ya calculado. */
-export interface TripLinkContext {
-  /** Nombre del destino tal y como se enseña */
-  destination: string;
-  /** ISO 3166-1 alfa-2 del destino, para la eSIM */
-  country: string | null;
-  /** ISO del país desde el que se sale: dentro del roaming europeo no ofrecemos eSIM */
-  originCountry: string;
-  /** Ciudad de Welcome Pickups, si cubren el destino */
-  transferSlug: string | null;
-  /** Slug de país de Airalo, si tiene cobertura */
-  esimSlug: string | null;
-  /** Plan elegido: cada uno lleva a un tipo de alojamiento y de actividades */
+// ——— Viajes: reserva paso a paso ———
+
+export type TripMode = "avion" | "tren" | "bus" | "coche";
+
+/** Lo que hace falta para enlazar la reserva de un plan de viaje ya calculado. */
+export interface TripStepsContext {
   tier: PlanTier;
-  /** Se vuela: solo entonces tienen sentido el vuelo y el traslado del aeropuerto */
-  flying: boolean;
-  /** Enlace real al vuelo más barato encontrado (ya lleva nuestro marker) */
-  flightHref?: string | null;
+  mode: TripMode;
+  origin: { name: string; country: string };
+  destination: {
+    name: string;
+    country: string;
+    iata: string;
+    civitatisSlug?: string | null;
+    /** Ciudad de Welcome Pickups, si cubren el destino */
+    transferSlug: string | null;
+    /** Slug de país de Airalo, solo si hace falta eSIM */
+    esimSlug: string | null;
+  };
+  /** Aeropuerto de salida, si se vuela */
+  airport: { iata: string; city: string } | null;
+  /** YYYY-MM-DD */
+  depart: string;
+  /** YYYY-MM-DD */
+  return: string;
   travelers: number;
+  /** El vuelo real más barato encontrado, con su enlace (ya lleva nuestro marker) */
+  flight?: { href: string; perPerson: number } | null;
 }
 
-const bookingSearch = (city: string, travelers: number, opts: { stars?: number; apartments?: boolean; byPrice?: boolean } = {}) => {
-  const rooms = Math.max(1, Math.ceil(travelers / 2));
+export interface TripStep {
+  title: string;
+  links: OutboundLink[];
+}
+
+const enc = encodeURIComponent;
+/** 2026-10-15 → 261015, el formato de fechas de las URLs públicas de Skyscanner */
+const shortDate = (iso: string) => iso.replaceAll("-", "").slice(2);
+const urlSlug = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+
+function bookingStay(city: string, ctx: TripStepsContext, opts: { stars?: number; apartments?: boolean; byPrice?: boolean } = {}): string {
   const u = new URL("https://www.booking.com/searchresults.es.html");
   u.searchParams.set("ss", city);
-  u.searchParams.set("group_adults", String(travelers));
-  u.searchParams.set("no_rooms", String(rooms));
+  u.searchParams.set("checkin", ctx.depart);
+  u.searchParams.set("checkout", ctx.return);
+  u.searchParams.set("group_adults", String(ctx.travelers));
+  u.searchParams.set("no_rooms", String(Math.max(1, Math.ceil(ctx.travelers / 2))));
   u.searchParams.set("group_children", "0");
   const filters = [opts.stars ? `class=${opts.stars}` : null, opts.apartments ? "ht_id=201" : null].filter(Boolean).join(";");
   if (filters) u.searchParams.set("nflt", filters);
   if (opts.byPrice) u.searchParams.set("order", "price");
   return u.toString();
-};
+}
 
-const gygSearch = (query: string) => `https://www.getyourguide.es/s/?q=${encodeURIComponent(query)}`;
+const gygSearch = (query: string) => `https://www.getyourguide.es/s/?q=${enc(query)}`;
+
+const gyg = (query: string, label: string, detail?: string): OutboundLink => ({
+  partner: "GetYourGuide",
+  kind: "search",
+  label,
+  detail,
+  href: affiliate("getyourguide", gygSearch(query), "viajes"),
+});
+
+const civitatis = (ctx: TripStepsContext, label: string): OutboundLink =>
+  ctx.destination.civitatisSlug
+    ? {
+        partner: "Civitatis",
+        kind: "search",
+        label,
+        detail: "En español",
+        href: affiliate("civitatis", `https://www.civitatis.com/es/${ctx.destination.civitatisSlug}/`, "viajes"),
+      }
+    : gyg(ctx.destination.name, label);
+
+const tiqets = (city: string, label = "Entradas a museos y monumentos"): OutboundLink => ({
+  partner: "Tiqets",
+  kind: "search",
+  label,
+  detail: "Sin colas",
+  href: affiliate("tiqets", `https://www.tiqets.com/es/search?q=${enc(city)}`, "viajes"),
+});
+
+const blablacar = (ctx: TripStepsContext, label = "Buscar coche compartido o bus"): OutboundLink => ({
+  partner: "BlaBlaCar",
+  kind: "search",
+  label,
+  detail: "Con la fecha y las plazas ya puestas",
+  href: affiliate(
+    "blablacar",
+    `https://www.blablacar.es/search?fn=${enc(ctx.origin.name)}&tn=${enc(ctx.destination.name)}&db=${ctx.depart}&seats=${ctx.travelers}`,
+    "viajes",
+  ),
+});
 
 /**
- * Servicios de un viaje, por plan. Cada uno paga comisión por reserva
- * (ver docs/AFILIACION.md); sin variable de entorno el enlace funciona igual
- * pero no cobramos. El orden es el de utilidad para quien viaja, nunca el de
- * comisión.
+ * Reserva de un plan de viaje, paso a paso y en el orden en que hay que
+ * hacerla. Cada enlace abre la búsqueda ya filtrada con las fechas y las
+ * personas. El orden es el de utilidad para quien viaja, nunca el de comisión.
  */
-export function travelLinks(ctx: TripLinkContext): OutboundLink[] {
-  const { destination: city, tier, travelers } = ctx;
-  const links: OutboundLink[] = [];
+export function tripSteps(ctx: TripStepsContext): TripStep[] {
+  const { tier, mode, destination: d } = ctx;
+  const city = d.name;
+  const steps: TripStep[] = [];
 
-  if (ctx.flying) {
-    links.push(
-      ctx.flightHref
-        ? { partner: "Aviasales", kind: "search", label: "Ver ese vuelo", detail: "El más barato encontrado para esa ruta", href: ctx.flightHref }
-        : { partner: "Skyscanner", kind: "search", label: "Buscar vuelos", href: affiliate("skyscanner", "https://www.skyscanner.es/", "viajes") },
-    );
+  steps.push({
+    title: "Cómo llegar desde tu casa",
+    links: [
+      {
+        partner: "Rome2Rio",
+        kind: "search",
+        label: "Ver cómo llegar puerta a puerta",
+        detail: "Todas las formas de ir, con tiempos",
+        href: affiliate("rome2rio", `https://www.rome2rio.com/map/${urlSlug(ctx.origin.name)}/${urlSlug(city)}`, "viajes"),
+      },
+    ],
+  });
+
+  if (mode === "avion" && ctx.airport) {
+    const o = ctx.airport.iata.toLowerCase();
+    const dest = d.iata.toLowerCase();
+    const cabin = tier === "top" ? "premiumeconomy" : "economy";
+    const links: OutboundLink[] = [];
+    if (tier === "budget" && ctx.flight) {
+      links.push({ partner: "Aviasales", kind: "search", label: `Ver el vuelo desde ${formatEUR(ctx.flight.perPerson)}`, detail: "El más barato encontrado para esa ruta", href: ctx.flight.href });
+    }
+    links.push({
+      partner: "Skyscanner",
+      kind: "search",
+      label: "Comparar vuelos",
+      detail: "Con tus fechas y viajeros",
+      href: affiliate(
+        "skyscanner",
+        `https://www.skyscanner.es/transporte/vuelos/${o}/${dest}/${shortDate(ctx.depart)}/${shortDate(ctx.return)}/?adultsv2=${ctx.travelers}&cabinclass=${cabin}`,
+        "viajes",
+      ),
+    });
+    const q = `Flights from ${ctx.airport.city} to ${city} on ${ctx.depart} through ${ctx.return}`;
+    links.push({
+      partner: "Google Flights",
+      kind: "search",
+      label: "Ver en Google Flights",
+      href: affiliate("googleflights", `https://www.google.com/travel/flights?q=${enc(q)}&hl=es&curr=EUR`, "viajes"),
+    });
+    steps.push({ title: tier === "budget" ? "Reserva el vuelo más barato" : "Reserva los vuelos", links });
+  } else if (mode === "coche") {
+    steps.push({
+      title: "Planifica la ruta",
+      links: [
+        {
+          partner: "Google Maps",
+          kind: "search",
+          label: "Ver ruta en coche",
+          href: affiliate(
+            "googlemaps",
+            `https://www.google.com/maps/dir/?api=1&origin=${enc(ctx.origin.name)}&destination=${enc(city)}&travelmode=driving`,
+            "viajes",
+          ),
+        },
+      ],
+    });
+  } else if (tier === "budget") {
+    steps.push({ title: "Reserva bus o coche compartido", links: [blablacar(ctx)] });
+  } else {
+    steps.push({
+      title: "Reserva el tren",
+      links: [
+        {
+          partner: "Google",
+          kind: "search",
+          label: "Buscar trenes",
+          detail: "Horarios y precios de todas las compañías",
+          href: affiliate("trenes", `https://www.google.com/search?q=${enc(`tren ${ctx.origin.name} ${city} ${ctx.depart}`)}`, "viajes"),
+        },
+        blablacar(ctx, "Alternativa más barata"),
+      ],
+    });
   }
 
-  if (tier === "budget") {
-    links.push({
-      partner: "Booking.com",
-      kind: "search",
-      label: `Alojamiento barato en ${city}`,
-      detail: "Ordenado por precio",
-      href: affiliate("booking", bookingSearch(city, travelers, { byPrice: true }), "viajes"),
-    });
-    links.push({
-      partner: "Hostelworld",
-      kind: "search",
-      label: "Hostales y habitaciones compartidas",
-      href: affiliate("hostelworld", "https://www.hostelworld.com/", "viajes"),
-    });
-  } else {
-    const stars = tier === "top" ? 5 : 3;
-    links.push({
-      partner: "Booking.com",
-      kind: "search",
-      label: `Hoteles de ${stars}★ en ${city}`,
-      detail: "Búsqueda con el destino y las personas ya puestos",
-      href: affiliate("booking", bookingSearch(city, travelers, { stars }), "viajes"),
-    });
-    if (ctx.flying) {
-      links.push(
-        ctx.transferSlug
+  // En el plan barato se usa el transporte público, así que no hay traslado que reservar.
+  if (mode === "avion" && tier !== "budget") {
+    const label = tier === "top" ? "Conductor esperándote a la llegada" : "Traslado privado, sin esperas ni maletas a cuestas";
+    steps.push({
+      title: "Reserva el traslado al hotel",
+      links: [
+        d.transferSlug
           ? {
               partner: "Welcome Pickups",
               kind: "search",
-              label: "Traslado del aeropuerto al hotel",
-              detail: "Conductor esperando, precio cerrado",
-              href: affiliate("welcomepickups", `https://www.welcomepickups.com/${ctx.transferSlug}/`, "viajes"),
+              label,
+              detail: "Precio cerrado",
+              href: affiliate("welcomepickups", `https://www.welcomepickups.com/${d.transferSlug}/`, "viajes"),
             }
-          : {
-              partner: "GetYourGuide",
-              kind: "search",
-              label: "Traslado del aeropuerto al hotel",
-              href: affiliate("getyourguide", gygSearch(`traslado aeropuerto ${city}`), "viajes"),
-            },
-      );
-    }
-  }
-
-  links.push(
-    tier === "top"
-      ? {
-          partner: "GetYourGuide",
-          kind: "search",
-          label: `Tours privados y experiencias en ${city}`,
-          href: affiliate("getyourguide", gygSearch(city), "viajes"),
-        }
-      : {
-          partner: "Civitatis",
-          kind: "search",
-          label: tier === "budget" ? `Free tours y actividades en ${city}` : `Visitas guiadas en ${city}`,
-          detail: "En español",
-          href: affiliate("civitatis", `https://www.civitatis.com/es/buscar?q=${encodeURIComponent(city)}`, "viajes"),
-        },
-  );
-
-  links.push({
-    partner: "Tiqets",
-    kind: "search",
-    label: "Entradas a museos y monumentos",
-    detail: "Sin colas",
-    href: affiliate("tiqets", `https://www.tiqets.com/es/search?q=${encodeURIComponent(city)}`, "viajes"),
-  });
-
-  if (ctx.esimSlug) {
-    links.push({
-      partner: "Airalo",
-      kind: "shop",
-      label: "eSIM con datos para el móvil",
-      detail: "Sin roaming ni cambiar de tarjeta",
-      href: affiliate("airalo", `https://www.airalo.com/${ctx.esimSlug}-esim`, "viajes"),
+          : gyg(`traslado aeropuerto ${city}`, label),
+      ],
     });
   }
 
+  const booking = (label: string, opts: Parameters<typeof bookingStay>[2], detail = "Con tus fechas y viajeros"): OutboundLink => ({
+    partner: "Booking.com",
+    kind: "search",
+    label,
+    detail,
+    href: affiliate("booking", bookingStay(city, ctx, opts), "viajes"),
+  });
+  steps.push({
+    title: "Reserva el alojamiento",
+    links:
+      tier === "budget"
+        ? [
+            booking("Alojamientos más baratos", { byPrice: true }),
+            { partner: "Hostelworld", kind: "search", label: `Hostales en ${city}`, href: affiliate("hostelworld", "https://www.hostelworld.com/", "viajes") },
+          ]
+        : tier === "value"
+          ? [booking("Hoteles 3★", { stars: 3 }), booking("Apartamentos", { apartments: true })]
+          : [booking("Hoteles 5★", { stars: 5 })],
+  });
+
+  const slug = d.civitatisSlug;
+  steps.push({
+    title: "Reserva actividades",
+    links:
+      tier === "budget"
+        ? [civitatis(ctx, "Free tours y actividades"), tiqets(city)]
+        : tier === "value"
+          ? [civitatis(ctx, "Actividades en español"), slug ? gyg(city, "Tours y entradas") : tiqets(city)]
+          : [gyg(`tour privado ${city}`, "Tours privados"), slug ? civitatis(ctx, "Actividades en español") : tiqets(city, "Entradas sin colas")],
+  });
+
+  const before: OutboundLink[] = [];
+  if (d.esimSlug) {
+    before.push({
+      partner: "Airalo",
+      kind: "shop",
+      label: "eSIM de datos: sin roaming ni tarjetas",
+      href: affiliate("airalo", `https://www.airalo.com/${d.esimSlug}-esim`, "viajes"),
+    });
+  }
   // Seguro de viaje (Awin): solo cuando se sale del país, que es cuando cubre algo que no cubre la sanidad pública.
-  if (ctx.country && ctx.country !== ctx.originCountry) {
-    links.push({
+  if (d.country !== ctx.origin.country) {
+    before.push({
       partner: "Assist Card",
       kind: "compare",
       label: "Seguro de viaje",
@@ -364,6 +475,13 @@ export function travelLinks(ctx: TripLinkContext): OutboundLink[] {
       href: affiliate("assistcard", "https://www.assistcard.com/es", "viajes"),
     });
   }
+  if (before.length > 0) steps.push({ title: "Antes de salir", links: before });
 
-  return links;
+  return steps;
 }
+
+/** Entradas para una atracción concreta del «qué ver». */
+export const attractionLink = (attraction: string, city: string): OutboundLink => gyg(`${attraction} ${city}`, "Entradas");
+
+/** Para destinos sin guía propia: tours y entradas ya filtrados por la ciudad. */
+export const cityDiscoveryLinks = (city: string): OutboundLink[] => [gyg(city, "Tours y actividades"), tiqets(city, "Entradas sin colas")];

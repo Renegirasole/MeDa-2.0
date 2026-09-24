@@ -51,32 +51,38 @@ export function usePlaces(text: string): PlacesState {
 
 const flightCache = new Map<string, FlightPrice | null>();
 
+export type FlightState = { status: "idle" } | { status: "loading" } | { status: "ok"; flight: FlightPrice } | { status: "none" };
+
 /**
- * Precio real de vuelo de la ruta, si lo hay. Nunca bloquea el cálculo: la
- * estimación se muestra igual mientras llega (o si no llega nunca).
+ * Precio real de vuelo de la ruta y las fechas, si lo hay. Nunca bloquea el
+ * cálculo: la estimación se enseña igual mientras llega (o si no llega).
  */
-export function useFlightPrice(from: string | undefined, to: string | undefined, enabled: boolean): FlightPrice | null {
-  const key = enabled && from && to && from !== to ? `${from}-${to}` : null;
-  const [price, setPrice] = useState<{ key: string; value: FlightPrice | null } | null>(null);
+export function useFlightPrice(q: { from?: string | null; to?: string | null; depart: string; ret: string; enabled: boolean }): FlightState {
+  const key = q.enabled && q.from && q.to && q.from !== q.to ? `${q.from}-${q.to}-${q.depart}-${q.ret}` : null;
+  const [result, setResult] = useState<{ key: string; value: FlightPrice | null } | null>(null);
 
   useEffect(() => {
-    if (!key) return;
-    if (flightCache.has(key)) {
-      setPrice({ key, value: flightCache.get(key) ?? null });
-      return;
-    }
+    if (!key || flightCache.has(key)) return;
     const controller = new AbortController();
-    const [o, d] = key.split("-");
-    fetch(`/api/vuelos?o=${o}&d=${d}`, { signal: controller.signal })
+    const [o, d, depart, ret] = [q.from, q.to, q.depart, q.ret];
+    const params = new URLSearchParams({ o: o ?? "", d: d ?? "", ida: depart, vuelta: ret });
+    fetch(`/api/vuelos?${params}`, { signal: controller.signal })
       .then((r) => r.json())
       .then((json: { flight?: FlightPrice | null }) => {
-        const value = json.flight && typeof json.flight.perPerson === "number" ? json.flight : null;
+        const value = json.flight && typeof json.flight.perPerson === "number" && json.flight.perPerson > 0 ? json.flight : null;
         flightCache.set(key, value);
-        setPrice({ key, value });
+        setResult({ key, value });
       })
-      .catch(() => setPrice({ key, value: null }));
+      .catch((e: unknown) => {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        setResult({ key, value: null });
+      });
     return () => controller.abort();
+    // `key` ya lleva la ruta y las fechas: es todo lo que usa el efecto.
   }, [key]);
 
-  return key && price?.key === key ? price.value : null;
+  if (!key) return { status: "idle" };
+  const cached = flightCache.has(key) ? flightCache.get(key) : result?.key === key ? result.value : undefined;
+  if (cached === undefined) return { status: "loading" };
+  return cached ? { status: "ok", flight: cached } : { status: "none" };
 }

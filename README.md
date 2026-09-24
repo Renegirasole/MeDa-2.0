@@ -33,7 +33,7 @@ Resto de `lib/`:
 |---|---|
 | `lib/data/categories.ts` | Las 10 calculadoras: SEO, valores por defecto, `guideline` (peso razonable del gasto sobre ingresos) |
 | `lib/data/travel.ts` | Precios de referencia de viajes (orígenes/destinos revisados a mano). Fecha de actualización en `TRAVEL_REFERENCE_UPDATED` |
-| `lib/viajes/` | Viajes a cualquier parte del mundo: `lugares.ts` (buscador y catálogo, puro), `paises.ts` (índice de precios, roaming, eSIM), `resolver.ts` (convierte una ciudad en cifras para el motor), `traslados.ts`, `fuentes.ts` (Aviasales: autocompletado y precios) y `hooks.ts` |
+| `lib/viajes/` | Planificador de viajes puerta a puerta, a cualquier ciudad del mundo. Puro: `plan.ts` (fechas, aeropuerto de salida, modo por plan y las siete partidas; donde hay cifras de René en `lib/data/travel.ts`, mandan ellas), `catalogo.ts` (46 ciudades de salida y 35 destinos con «qué ver»), `aeropuertos.ts` (31 aeropuertos, hubs e islas), `lugares.ts` (buscador), `paises.ts` (índice de precios, roaming, eSIM) y `traslados.ts`. Con red: `fuentes.ts` (Aviasales: autocompletado y precios) y `hooks.ts`. Los enlaces de la reserva paso a paso están en `lib/affiliates.ts` (`tripSteps`) |
 | `lib/data/appraisal.ts` | Configuración del tasador (piso venta/alquiler, coche) |
 | `lib/explain/template.ts` | Explicación en lenguaje llano sin IA (siempre disponible) |
 | `lib/storage/` | Perfil guardado en `localStorage`, sincronizado entre pestañas |
