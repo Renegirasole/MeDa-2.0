@@ -64,8 +64,8 @@ export function PartnerLinks({
         ))}
       </ul>
       <p className="mt-2.5 text-[12px] leading-snug text-muted">
-        Enlaces de afiliado: si compras o pides información, podemos recibir una comisión sin coste para ti. Nunca cambia tu
-        nota ni el orden.
+        Enlaces de afiliado: si compras o pides información, podemos recibir una comisión sin coste para ti. Por eso los
+        partners con los que tenemos acuerdo salen primero. Tu nota no cambia nunca.
       </p>
     </div>
   );

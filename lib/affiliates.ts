@@ -32,10 +32,9 @@ export interface DealContext {
 
 // Tienen que ir escritas enteras: Next solo sustituye `process.env.NEXT_PUBLIC_X` literal.
 const TEMPLATES: Record<string, string | undefined> = {
-  iahorro: process.env.NEXT_PUBLIC_AFF_IAHORRO,
-  helpmycash: process.env.NEXT_PUBLIC_AFF_HELPMYCASH,
-  rastreator: process.env.NEXT_PUBLIC_AFF_RASTREATOR,
-  acierto: process.env.NEXT_PUBLIC_AFF_ACIERTO,
+  h2b: process.env.NEXT_PUBLIC_AFF_H2B,
+  lineadirecta: process.env.NEXT_PUBLIC_AFF_LINEADIRECTA,
+  assistcard: process.env.NEXT_PUBLIC_AFF_ASSISTCARD,
   cochesnet: process.env.NEXT_PUBLIC_AFF_COCHESNET,
   autoscout24: process.env.NEXT_PUBLIC_AFF_AUTOSCOUT24,
   fotocasa: process.env.NEXT_PUBLIC_AFF_FOTOCASA,
@@ -104,6 +103,13 @@ function car(ctx: DealContext): OutboundLink[] {
   }
   return [
     {
+      partner: "Línea Directa",
+      kind: "compare",
+      label: "Calcula el seguro antes de comprar",
+      detail: "Es el gasto que más mueve tu cuota real. Presupuesto gratis",
+      href: affiliate("lineadirecta", "https://www.lineadirecta.com/seguros-coche/", "coche"),
+    },
+    {
       partner: "coches.net",
       kind: "search",
       label: cap ? `Coches hasta ${formatEUR(cap)} en coches.net` : "Buscar en coches.net",
@@ -111,23 +117,10 @@ function car(ctx: DealContext): OutboundLink[] {
       href: affiliate("cochesnet", coches.toString(), "coche"),
     },
     {
-      partner: "Rastreator",
-      kind: "compare",
-      label: "Compara el seguro antes de comprar",
-      detail: "Es el gasto que más mueve tu cuota real. Gratis y sin compromiso",
-      href: affiliate("rastreator", "https://www.rastreator.com/seguros-de-coche", "coche"),
-    },
-    {
       partner: "AutoScout24",
       kind: "search",
       label: cap ? `Coches hasta ${formatEUR(cap)} en AutoScout24` : "Buscar en AutoScout24",
       href: affiliate("autoscout24", autoscout.toString(), "coche"),
-    },
-    {
-      partner: "Acierto",
-      kind: "compare",
-      label: "Segunda opinión del seguro en Acierto",
-      href: affiliate("acierto", "https://www.acierto.com/seguros-coche/", "coche"),
     },
   ];
 }
@@ -138,18 +131,18 @@ function moto(ctx: DealContext): OutboundLink[] {
   if (cap) motos.searchParams.set("MaxPrice", String(cap));
   return [
     {
+      partner: "Línea Directa",
+      kind: "compare",
+      label: "Calcula el seguro de moto",
+      detail: "Presupuesto gratis y sin compromiso",
+      href: affiliate("lineadirecta", "https://www.lineadirecta.com/seguros-moto/", "moto"),
+    },
+    {
       partner: "motos.net",
       kind: "search",
       label: cap ? `Motos hasta ${formatEUR(cap)} en motos.net` : "Buscar en motos.net",
       detail: cap ? "Búsqueda ya filtrada por lo que te da" : undefined,
       href: affiliate("cochesnet", motos.toString(), "moto"),
-    },
-    {
-      partner: "Rastreator",
-      kind: "compare",
-      label: "Compara el seguro de moto",
-      detail: "Gratis y sin compromiso",
-      href: affiliate("rastreator", "https://www.rastreator.com/seguros-de-moto", "moto"),
     },
   ];
 }
@@ -161,11 +154,11 @@ function buyHome(ctx: DealContext): OutboundLink[] {
   if (cap) fotocasa.searchParams.set("maxPrice", String(cap));
   return [
     {
-      partner: "iAhorro",
+      partner: "h2b Hipotecas",
       kind: "compare",
       label: loan ? `Compara hipotecas para ${formatEUR(loan)}` : "Compara hipotecas",
-      detail: "Un bróker busca la mejor oferta entre bancos. Gratis para ti",
-      href: affiliate("iahorro", "https://www.iahorro.com/hipotecas", "vivienda"),
+      detail: "Un bróker negocia con los bancos por ti. Gratis para ti",
+      href: affiliate("h2b", "https://www.h2bhipotecas.com/", "vivienda"),
     },
     {
       partner: "Fotocasa",
@@ -173,13 +166,6 @@ function buyHome(ctx: DealContext): OutboundLink[] {
       label: cap ? `Pisos hasta ${formatEUR(cap)} en Fotocasa` : "Buscar en Fotocasa",
       detail: cap ? "Búsqueda ya filtrada por lo que te da" : undefined,
       href: affiliate("fotocasa", fotocasa.toString(), "vivienda"),
-    },
-    {
-      partner: "HelpMyCash",
-      kind: "compare",
-      label: "Segunda opinión en HelpMyCash",
-      detail: "Comparador independiente de hipotecas",
-      href: affiliate("helpmycash", "https://www.helpmycash.com/hipotecas/", "vivienda"),
     },
   ];
 }
@@ -190,18 +176,18 @@ function rentHome(ctx: DealContext): OutboundLink[] {
   if (cap) fotocasa.searchParams.set("maxPrice", String(cap));
   return [
     {
+      partner: "Línea Directa",
+      kind: "compare",
+      label: "Calcula el seguro de hogar",
+      detail: "Muchos caseros lo piden. Presupuesto gratis",
+      href: affiliate("lineadirecta", "https://www.lineadirecta.com/seguros-hogar/", "alquiler"),
+    },
+    {
       partner: "Fotocasa",
       kind: "search",
       label: cap ? `Alquileres hasta ${formatEUR(cap)} al mes` : "Buscar alquiler en Fotocasa",
       detail: cap ? "Búsqueda ya filtrada por lo que te da" : undefined,
       href: affiliate("fotocasa", fotocasa.toString(), "alquiler"),
-    },
-    {
-      partner: "Rastreator",
-      kind: "compare",
-      label: "Compara el seguro de hogar",
-      detail: "Muchos caseros lo piden. Gratis y sin compromiso",
-      href: affiliate("rastreator", "https://www.rastreator.com/seguros-de-hogar", "alquiler"),
     },
   ];
 }
@@ -210,6 +196,13 @@ function trip(): OutboundLink[] {
   return [
     { partner: "Skyscanner", kind: "search", label: "Buscar vuelos", href: affiliate("skyscanner", "https://www.skyscanner.es/", "viaje") },
     { partner: "Booking.com", kind: "search", label: "Buscar alojamiento", href: affiliate("booking", "https://www.booking.com/", "viaje") },
+    {
+      partner: "Assist Card",
+      kind: "compare",
+      label: "Seguro de viaje",
+      detail: "Asistencia médica y cancelación fuera de España",
+      href: affiliate("assistcard", "https://www.assistcard.com/es", "viaje"),
+    },
   ];
 }
 
@@ -358,6 +351,17 @@ export function travelLinks(ctx: TripLinkContext): OutboundLink[] {
       label: "eSIM con datos para el móvil",
       detail: "Sin roaming ni cambiar de tarjeta",
       href: affiliate("airalo", `https://www.airalo.com/${ctx.esimSlug}-esim`, "viajes"),
+    });
+  }
+
+  // Seguro de viaje (Awin): solo cuando se sale del país, que es cuando cubre algo que no cubre la sanidad pública.
+  if (ctx.country && ctx.country !== ctx.originCountry) {
+    links.push({
+      partner: "Assist Card",
+      kind: "compare",
+      label: "Seguro de viaje",
+      detail: "Asistencia médica y cancelación fuera de España",
+      href: affiliate("assistcard", "https://www.assistcard.com/es", "viajes"),
     });
   }
 

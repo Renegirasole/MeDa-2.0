@@ -16,8 +16,8 @@ export const generateStaticParams = () => MORTGAGE_AMOUNTS.map((v) => ({ caso: m
 const rate = `${A.rate.toLocaleString("es-ES")} %`;
 const titleFor = (loan: number) => `¿Cuánto tengo que ganar para una hipoteca de ${formatEUR(loan)}?`;
 function describe(loan: number) {
-  const { r30 } = mortgageCase(loan);
-  return `Hipoteca de ${formatEUR(loan)} a ${A.years} años al ${rate}: cuota de ${formatEUR(r30.payment)} al mes, sueldo neto mínimo de ${formatEUR(r30.minIncomeEffort)} y ${formatEUR(r30.cashNeeded)} ahorrados. Con calculadora gratis.`;
+  const { r30, income30 } = mortgageCase(loan);
+  return `Hipoteca de ${formatEUR(loan)} a ${A.years} años al ${rate}: cuota de ${formatEUR(r30.payment)} al mes, sueldo neto mínimo de ${formatEUR(income30)} y ${formatEUR(r30.cashNeeded)} ahorrados. Con calculadora gratis.`;
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
@@ -32,13 +32,13 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function MortgageAmountPage({ params }: { params: Params }) {
   const loan = parseMortgageSlug((await params).caso);
   if (!loan) notFound();
-  const { r30, r25 } = mortgageCase(loan);
+  const { r30, r25, income30, income25 } = mortgageCase(loan);
   const path = `/cuanto-ganar-para/${mortgageSlug(loan)}`;
   const href = `/calculadoras/${HOUSING.slug}#s=${encodeShare({ purchase: mortgagePurchase(loan) })}`;
   const guideline = formatPct(HOUSING.guideline);
   const i = MORTGAGE_AMOUNTS.indexOf(loan);
   const next = MORTGAGE_AMOUNTS[i + 1] ?? MORTGAGE_AMOUNTS[i - 1];
-  const step = mortgageCase(next).r30;
+  const stepCase = mortgageCase(next);
   const stepSign = next > loan ? "más" : "menos";
 
   const faqs: Faq[] = [
@@ -48,7 +48,7 @@ export default async function MortgageAmountPage({ params }: { params: Params })
     },
     {
       q: `¿Cuánto hay que cobrar para una hipoteca de ${formatEUR(loan)}?`,
-      a: `Al menos ${formatEUR(r30.minIncomeEffort)} netos al mes a ${A.years} años (${formatEUR(r25.minIncomeEffort)} a 25 años), para que la cuota y los gastos de la casa no pasen del ${guideline} de tus ingresos. En pareja, entre los dos sueldos.`,
+      a: `Al menos ${formatEUR(income30)} netos al mes a ${A.years} años (${formatEUR(income25)} a 25 años), para que la cuota y los gastos de la casa no pasen del ${guideline} de tus ingresos y te quede margen y colchón. En pareja, entre los dos sueldos.`,
     },
     {
       q: `¿Cuánto hay que tener ahorrado para una hipoteca de ${formatEUR(loan)}?`,
@@ -70,12 +70,18 @@ export default async function MortgageAmountPage({ params }: { params: Params })
         <>
           <p className="max-w-[60ch] text-[19px] leading-relaxed text-white md:text-xl">
             Para una hipoteca de {formatEUR(loan)} a {A.years} años al {rate}, necesitas cobrar al menos{" "}
-            <strong className="font-semibold text-brand-300">{formatEUR(r30.minIncomeEffort)} netos al mes</strong> y tener unos{" "}
+            <strong className="font-semibold text-brand-300">{formatEUR(income30)} netos al mes</strong> y tener unos{" "}
             <strong className="font-semibold">{formatEUR(r30.cashNeeded)} ahorrados</strong>.
           </p>
           <dl className="mt-8 grid grid-cols-1 gap-6 border-t border-night-line pt-6 sm:grid-cols-3">
             <Stat tone="night" lead label="Cuota al mes" value={formatEUR(r30.payment)} hint={`${A.years} años al ${rate}`} />
-            <Stat tone="night" lead label="Sueldo neto mínimo" value={formatEUR(r30.minIncomeEffort)} hint={`Para no pasar del ${guideline}`} />
+            <Stat
+              tone="night"
+              lead
+              label="Sueldo neto mínimo"
+              value={formatEUR(income30)}
+              hint={income30 > r30.minIncomeEffort ? "Para que MeDa te diga que te da" : `Para no pasar del ${guideline}`}
+            />
             <Stat tone="night" lead label="Ahorros" value={formatEUR(r30.cashNeeded)} hint={`Casa de ${formatEUR(r30.price)}`} />
           </dl>
         </>
@@ -87,15 +93,21 @@ export default async function MortgageAmountPage({ params }: { params: Params })
           {formatEUR(A.running)} de comunidad, IBI y seguro, la casa cuesta {formatEUR(r30.monthlyTotal)} al mes. Para que eso
           no pase del {guideline} de lo que ingresas, hacen falta {formatEUR(r30.minIncomeEffort)} netos.
         </p>
+        {income30 > r30.minIncomeEffort && (
+          <p>
+            Con ese sueldo, sin embargo, la calculadora no te diría que te da: los gastos de vida no bajan porque la hipoteca
+            sea pequeña, así que te quedarías sin margen. Con unos gastos de {formatEUR(A.livingCosts)} al mes, la nota llega
+            al aprobado a partir de {formatEUR(income30)} netos. Esa es la cifra que damos arriba.
+          </p>
+        )}
         <p>
-          A 25 años la cuota sube a {formatEUR(r25.payment)} y el sueldo necesario, a {formatEUR(r25.minIncomeEffort)}, pero
-          pagas unos {formatEUR(r30.payment * A.years * 12 - loan - (r25.payment * 300 - loan))} menos de intereses.
+          A 25 años la cuota sube a {formatEUR(r25.payment)} y el sueldo necesario, a {formatEUR(income25)}, pero pagas unos{" "}
+          {formatEUR(r30.payment * A.years * 12 - loan - (r25.payment * 300 - loan))} menos de intereses.
         </p>
         <p>
-          Cada 20.000 € {stepSign} de hipoteca mueven la cuota unos {formatEUR(Math.abs(step.payment - r30.payment))} al mes y el
-          sueldo necesario unos {formatEUR(Math.abs(step.minIncomeEffort - r30.minIncomeEffort))}. Si sois dos, basta con que
-          sumando lleguéis a {formatEUR(r30.minIncomeEffort)}: por ejemplo, {formatEUR(Math.ceil(r30.minIncomeEffort / 20) * 10)}{" "}
-          cada uno.
+          Cada 20.000 € {stepSign} de hipoteca mueven la cuota unos {formatEUR(Math.abs(stepCase.r30.payment - r30.payment))} al
+          mes y el sueldo necesario unos {formatEUR(Math.abs(stepCase.income30 - income30))}. Si sois dos, basta con que
+          sumando lleguéis a {formatEUR(income30)}: por ejemplo, {formatEUR(Math.ceil(income30 / 20) * 10)} cada uno.
         </p>
       </GuideSection>
 
@@ -114,7 +126,7 @@ export default async function MortgageAmountPage({ params }: { params: Params })
         head={["Hipoteca", "Cuota al mes", "Sueldo neto mínimo", "Ahorros"]}
         highlight={neighbors(MORTGAGE_AMOUNTS, loan).indexOf(loan)}
         rows={neighbors(MORTGAGE_AMOUNTS, loan).map((v) => {
-          const r = mortgageCase(v).r30;
+          const c = mortgageCase(v);
           return [
             v === loan ? (
               formatEUR(v)
@@ -123,9 +135,9 @@ export default async function MortgageAmountPage({ params }: { params: Params })
                 {formatEUR(v)}
               </Link>
             ),
-            formatEUR(r.payment),
-            formatEUR(r.minIncomeEffort),
-            formatEUR(r.cashNeeded),
+            formatEUR(c.r30.payment),
+            formatEUR(c.income30),
+            formatEUR(c.r30.cashNeeded),
           ];
         })}
       />

@@ -1,8 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { loanPayment } from "../lib/engine";
+import { evaluateOne, PASSING_SCORE } from "../lib/engine";
 import {
   CAR,
+  carProfile,
+  mortgageCase,
   CAR_ASSUMPTIONS,
   CAR_SALARIES,
   carCase,
@@ -43,11 +46,28 @@ test("loanFor es la inversa de la cuota", () => {
 test("coche: todo el coche al mes no pasa de la referencia", () => {
   for (const s of CAR_SALARIES) {
     const c = carCase(s);
-    const payment = loanPayment(c.maxPrice - CAR_ASSUMPTIONS.downPayment, CAR_ASSUMPTIONS.rate, CAR_ASSUMPTIONS.months);
+    const payment = loanPayment(c.maxPriceRule - CAR_ASSUMPTIONS.downPayment, CAR_ASSUMPTIONS.rate, CAR_ASSUMPTIONS.months);
     assert.ok(payment + CAR_ASSUMPTIONS.running <= s * CAR.guideline + 1e-6, `sueldo ${s}`);
   }
   // Más sueldo, más coche
   assert.ok(carCase(2000).maxPrice > carCase(1500).maxPrice);
+});
+
+test("las páginas nunca prometen más de lo que aprueba la calculadora", () => {
+  for (const s of CAR_SALARIES) {
+    const c = carCase(s);
+    assert.ok(c.maxPrice <= c.maxPriceRule, `coche con ${s}`);
+    const r = evaluateOne(carProfile(s), { ...CAR.defaults, price: c.maxPrice }, CAR.guideline);
+    assert.ok(r.score >= PASSING_SCORE, `coche con ${s} → nota ${r.score}`);
+  }
+  for (const s of RENT_SALARIES) {
+    const c = rentCase(s);
+    assert.ok(c.maxRent <= c.maxRentRule, `alquiler con ${s}`);
+  }
+  for (const loan of MORTGAGE_AMOUNTS) {
+    const c = mortgageCase(loan);
+    assert.ok(c.income30 >= c.r30.minIncomeEffort, `hipoteca de ${loan}`);
+  }
 });
 
 test("alquiler: renta + suministros por debajo del 35 %; la regla del 30 % es más prudente", () => {

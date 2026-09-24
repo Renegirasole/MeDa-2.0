@@ -58,7 +58,8 @@ export type FlagCode =
   | "cushion_critical"
   | "cushion_below_target"
   | "over_guideline"
-  | "high_interest";
+  | "high_interest"
+  | "stress_fragile";
 
 export interface ScoreCap {
   flag: FlagCode;
@@ -70,6 +71,8 @@ export interface AffordabilityResult {
   verdict: Verdict;
   /** Nota antes de aplicar topes */
   rawScore: number;
+  /** Nota en la prueba de estrés: ingresos más bajos y, si el préstamo es largo, interés más alto */
+  stressScore: number;
   appliedCap: ScoreCap | null;
   factors: ScoreFactor[];
   flags: FlagCode[];

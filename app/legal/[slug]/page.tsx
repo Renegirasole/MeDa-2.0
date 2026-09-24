@@ -29,7 +29,8 @@ const PAGES: Record<string, { title: string; body: ReactNode }> = {
         </p>
         <p>
           Algunos enlaces a tiendas y servicios son de afiliación: si compras a través de ellos podemos recibir una comisión,
-          sin coste para ti. Estos acuerdos nunca modifican la nota ni el orden de los resultados.
+          sin coste para ti. Estos acuerdos nunca modifican tu nota ni los planes que te proponemos. Sí influyen en el orden
+          de los enlaces a partners: los que tienen acuerdo con nosotros aparecen primero, y siempre van marcados como tales.
         </p>
       </>
     ),
@@ -66,6 +67,14 @@ const PAGES: Record<string, { title: string; body: ReactNode }> = {
             .
           </p>
         )}
+        {SITE.googleAdsId ? (
+          <p>
+            Si llegas desde un anuncio nuestro en Google, la etiqueta de Google Ads nos dice de forma agregada qué anuncios
+            traen gente que luego pulsa un enlace de partner. No le enviamos tus cifras ni nada que te identifique, y solo
+            se usan cookies para ello si lo aceptas en el aviso de consentimiento: si lo rechazas, la medición es anónima y
+            estimada.
+          </p>
+        ) : null}
         <p>
           Si te apuntas a «Avísame», guardamos tu email y el objetivo que estabas mirando (qué y cuánto cuesta), nunca tus
           ingresos, gastos ni ahorros. Lo usamos solo para escribirte una vez al mes sobre ese objetivo, con tu consentimiento,
@@ -90,9 +99,17 @@ const PAGES: Record<string, { title: string; body: ReactNode }> = {
             </a>
             .
           </p>
-        ) : (
+        ) : null}
+        {SITE.googleAdsId ? (
+          <p>
+            También medimos nuestras propias campañas en Google Ads: si has llegado desde uno de nuestros anuncios, Google
+            puede instalar una cookie para no contarte dos veces y saber qué anuncio funcionó. Se instala solo si aceptas
+            en el aviso de consentimiento, y puedes cambiar tu elección cuando quieras.
+          </p>
+        ) : null}
+        {!SITE.adsenseClient && !SITE.googleAdsId ? (
           <p>MeDa no usa cookies publicitarias ni de seguimiento.</p>
-        )}
+        ) : null}
         <p>
           Por nuestra parte, solo usamos el almacenamiento local de tu navegador para
           recordar tus datos en este dispositivo, algo técnicamente necesario para que la herramienta funcione sin cuenta.
@@ -110,14 +127,17 @@ type Params = Promise<{ slug: string }>;
 
 export const dynamicParams = false;
 
+/** Slugs legales, tambien usados por el sitemap. */
+export const LEGAL_SLUGS = Object.keys(PAGES);
+
 export function generateStaticParams() {
-  return Object.keys(PAGES).map((slug) => ({ slug }));
+  return LEGAL_SLUGS.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
   const page = PAGES[slug];
-  return page ? { title: page.title, robots: { index: false }, alternates: { canonical: `/legal/${slug}` } } : {};
+  return page ? { title: page.title, alternates: { canonical: `/legal/${slug}` } } : {};
 }
 
 export default async function LegalPage({ params }: { params: Params }) {

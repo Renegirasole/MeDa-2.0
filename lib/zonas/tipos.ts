@@ -66,6 +66,8 @@ export interface Dwelling {
   /** Escalera, planta y puerta ya montados: "Esc. A · 3º · IZ" */
   label: string;
   floor: string;
+  /** Planta en número: 0 = bajo, 1 = primero… null si no se sabe */
+  level: number | null;
   door: string;
   /** Superficie construida, m² */
   area: number;
@@ -74,8 +76,29 @@ export interface Dwelling {
   use: string;
 }
 
+/** Anuncios publicados ahora mismo cerca de una dirección (API oficial de idealista). */
+export interface ListingStats {
+  /** €/m² de los anuncios: percentil 25, mediana y 75 */
+  p25: number;
+  median: number;
+  p75: number;
+  /** Anuncios usados */
+  count: number;
+  /** Metros del piso típico anunciado */
+  medianArea: number;
+  /** Cada anuncio usado, como [metros, €/m²]: para comparar con pisos de tu tamaño */
+  sample: Array<[number, number]>;
+  /** Radio de búsqueda en metros */
+  radius: number;
+  /** Cuándo se consultó (ISO) */
+  fetchedAt: string;
+  source: "idealista";
+}
+
 export interface ZoneEstimate {
   mode: ZoneMode;
+  /** Anuncios de tamaño parecido al tuyo con los que se ha calculado (0 = se usó toda la zona) */
+  matched?: number;
   /** €/m² usados (al mes en alquiler, de venta en compra) */
   unitPrice: number;
   quick: number;

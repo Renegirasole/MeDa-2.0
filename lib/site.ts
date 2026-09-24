@@ -7,6 +7,10 @@ export const SITE = {
   /** Datos del titular para Aviso legal (LSSI). Completar antes de publicar. */
   /** ID de editor de Google AdSense (ca-pub-…). Vacío = sin anuncios. */
   adsenseClient: normalizeAdsenseId(process.env.NEXT_PUBLIC_ADSENSE_CLIENT),
+  /** ID de Google Ads (AW-…). Vacío = sin etiqueta ni medición de campañas. */
+  googleAdsId: normalizeGoogleAdsId(process.env.NEXT_PUBLIC_GOOGLE_ADS_ID),
+  /** Etiqueta de la conversión «clic a partner»: la parte tras la barra en AW-123456789/AbC-D_efG. */
+  googleAdsPartnerLabel: process.env.NEXT_PUBLIC_GOOGLE_ADS_PARTNER_LABEL?.trim() ?? "",
   owner: {
     legalName: process.env.NEXT_PUBLIC_LEGAL_NAME ?? "Titular de MeDa",
     taxId: process.env.NEXT_PUBLIC_LEGAL_TAX_ID ?? "",
@@ -19,6 +23,12 @@ export const SITE = {
 function normalizeAdsenseId(raw: string | undefined): string {
   const digits = raw?.trim().match(/(\d{10,})/)?.[1];
   return digits ? `ca-pub-${digits}` : "";
+}
+
+/** Acepta "AW-123456789", "123456789" o "AW-123456789/etiqueta" y devuelve "AW-123456789". */
+function normalizeGoogleAdsId(raw: string | undefined): string {
+  const digits = raw?.trim().match(/(\d{8,})/)?.[1];
+  return digits ? `AW-${digits}` : "";
 }
 
 /** Navegación principal: las cuatro herramientas. */

@@ -14,10 +14,16 @@ export const VERDICT_THRESHOLDS: ReadonlyArray<readonly [number, Verdict]> = [
   [0, "no"],
 ];
 
-/** Esfuerzo = coste mensual / ingresos, relativo a la referencia de la categoría. */
+/**
+ * Esfuerzo = coste mensual / ingresos, relativo a la referencia de la categoría.
+ * Estar justo en la referencia es un aprobado raspado (5), no un notable: la
+ * referencia es un techo recomendado, no un objetivo al que aspirar.
+ */
 export const EFFORT_CURVE = [
   [0.5, 10],
-  [1, 6],
+  [0.75, 8],
+  [1, 5],
+  [1.5, 1.5],
   [2, 0],
 ] as const;
 
@@ -42,6 +48,30 @@ export const CAPS = {
   upcoming_uncovered: 2.5,
   cushion_critical: 4.9,
   cushion_below_target: 6.9,
+} as const;
+
+/**
+ * Topes por pasarse de la referencia de la categoría, de más grave a menos.
+ * `[veces la referencia, nota máxima]`: gastar el doble de lo recomendable no
+ * puede salir aprobado por muchos ahorros que haya detrás.
+ */
+export const EFFORT_CAPS = [
+  [1.5, 4],
+  [1.25, 5.5],
+  [1, 6.9],
+] as const;
+
+/**
+ * Prueba de estrés: la nota se calcula otra vez con los ingresos bajados y, en
+ * préstamos largos (hipotecas, donde el tipo suele ser variable), con el
+ * interés subido. La nota final no puede separarse de la estresada más de
+ * `maxGap`, así que una compra que solo aguanta si nada va mal no aprueba.
+ */
+export const STRESS = {
+  incomeDrop: 0.1,
+  rateRise: 2,
+  longTermMonths: 120,
+  maxGap: 2,
 } as const;
 
 export function effortFactor(effortRatio: number, guideline: number): ScoreFactor {
@@ -77,8 +107,29 @@ export function cushionFactor(cushionMonths: number, targetMonths: number): Scor
   };
 }
 
+/** Suelo al combinar: un 0 limpio dejaría la nota en 0 pase lo que pase. */
+const FACTOR_FLOOR = 0.1;
+
+/**
+ * Media geométrica ponderada, no media normal: los factores se multiplican en
+ * vez de sumarse, así que un factor malo no se compensa con otros buenos.
+ * Tener mucho colchón (un stock que se gasta una vez) no hace sana una cuota
+ * alta (un flujo que vuelve cada mes).
+ */
 export function combineFactors(factors: ScoreFactor[]): number {
-  return clamp(factors.reduce((acc, f) => acc + f.score * f.weight, 0), 0, 10);
+  if (factors.length === 0) return 0;
+  const totalWeight = factors.reduce((acc, f) => acc + f.weight, 0);
+  if (totalWeight <= 0) return 0;
+  const logSum = factors.reduce((acc, f) => acc + f.weight * Math.log(Math.max(f.score, FACTOR_FLOOR)), 0);
+  return clamp(Math.exp(logSum / totalWeight), 0, 10);
+}
+
+/** Tope por esfuerzo, si el coste mensual se pasa de la referencia. */
+export function effortCap(effortRatio: number, guideline: number): number | null {
+  if (guideline <= 0) return null;
+  const rel = effortRatio / guideline;
+  for (const [times, max] of EFFORT_CAPS) if (rel > times) return max;
+  return null;
 }
 
 export function strongestCap(caps: ScoreCap[]): ScoreCap | null {

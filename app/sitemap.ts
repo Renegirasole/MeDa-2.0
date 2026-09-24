@@ -4,6 +4,7 @@ import { APPRAISALS } from "@/lib/data/appraisal";
 import { GUIDES } from "@/lib/guides";
 import { PROGRAMMATIC_PATHS } from "@/lib/programmatic";
 import { TOWN_PATHS } from "@/lib/zonas/precios";
+import { LEGAL_SLUGS } from "@/app/legal/[slug]/page";
 import { SITE } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -25,6 +26,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/quienes-somos", priority: 0.5 },
     { path: "/como-calculamos", priority: 0.5 },
     { path: "/anunciate", priority: 0.3 },
+    ...LEGAL_SLUGS.map((slug) => ({ path: `/legal/${slug}`, priority: 0.2 })),
   ];
   return paths.map((p) => ({ url: `${SITE.url}${p.path}`, lastModified: now, changeFrequency: "monthly", priority: p.priority }));
 }

@@ -6,18 +6,18 @@ import { affiliate, dealLinks, travelLinks } from "../lib/affiliates";
 const plain = (s: string) => s.replace(/\s/g, " ");
 
 test("sin plantilla: enlace directo con UTM", () => {
-  const href = affiliate("x", "https://www.rastreator.com/seguros-de-coche", "coche", undefined);
+  const href = affiliate("x", "https://www.lineadirecta.com/seguros-coche/", "coche", undefined);
   const u = new URL(href);
-  assert.equal(u.hostname, "www.rastreator.com");
+  assert.equal(u.hostname, "www.lineadirecta.com");
   assert.equal(u.searchParams.get("utm_source"), "meda");
   assert.equal(u.searchParams.get("utm_campaign"), "coche");
 });
 
 test("plantilla Awin: destino codificado en ued", () => {
-  const href = affiliate("x", "https://www.iahorro.com/hipotecas", "vivienda", "https://www.awin1.com/cread.php?awinmid=1&awinaffid=2&ued={url}");
+  const href = affiliate("x", "https://www.h2bhipotecas.com/", "vivienda", "https://www.awin1.com/cread.php?awinmid=1&awinaffid=2&ued={url}");
   const u = new URL(href);
   assert.equal(u.hostname, "www.awin1.com");
-  assert.ok(u.searchParams.get("ued")!.startsWith("https://www.iahorro.com/hipotecas?utm_source=meda"));
+  assert.ok(u.searchParams.get("ued")!.startsWith("https://www.h2bhipotecas.com/?utm_source=meda"));
 });
 
 test("plantilla rota o no https: se ignora", () => {
@@ -25,10 +25,20 @@ test("plantilla rota o no https: se ignora", () => {
   assert.ok(affiliate("x", "https://a.es/", "c", "http://evil.es/?u={url}").startsWith("https://a.es/"));
 });
 
+const byPartner = (slug: Parameters<typeof dealLinks>[0], partner: string, ctx = {}) =>
+  dealLinks(slug, ctx).find((l) => l.partner === partner)!;
+
 test("coche: tope redondeado hacia abajo en el filtro y en el texto", () => {
-  const [coches] = dealLinks("coche", { budget: 16805 });
+  const coches = byPartner("coche", "coches.net", { budget: 16805 });
   assert.equal(new URL(coches.href).searchParams.get("MaxPrice"), "16800");
   assert.equal(plain(coches.label), "Coches hasta 16.800 € en coches.net");
+});
+
+// El aviso bajo el bloque dice que los partners con acuerdo salen primero: si esto cambia, hay que cambiar el texto.
+test("el partner con acuerdo va el primero", () => {
+  for (const slug of ["coche", "moto", "alquilar-vivienda", "comprar-vivienda"] as const) {
+    assert.equal(dealLinks(slug)[0].kind, "compare", slug);
+  }
 });
 
 test("vivienda: hipoteca con el importe a financiar", () => {
@@ -39,7 +49,7 @@ test("vivienda: hipoteca con el importe a financiar", () => {
 });
 
 test("sin contexto: textos genéricos y sin filtros", () => {
-  const [coches] = dealLinks("coche");
+  const coches = byPartner("coche", "coches.net");
   assert.equal(coches.label, "Buscar en coches.net");
   assert.equal(new URL(coches.href).searchParams.get("MaxPrice"), null);
   assert.deepEqual(dealLinks("otro"), []);

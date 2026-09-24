@@ -28,6 +28,7 @@ export const FLAG_COPY: Record<FlagCode, string> = {
   cushion_below_target: "Te quedarías por debajo del colchón que quieres tener.",
   over_guideline: "Te lleva más parte del sueldo de lo recomendable para este tipo de gasto.",
   high_interest: "El interés de la financiación es alto. Compara otras ofertas antes de firmar.",
+  stress_fragile: "Solo te sale bien si todo va bien: si tus ingresos bajaran un poco, esta compra dejaría de darte.",
 };
 
 export const TRIP_LINE_COPY: Record<TripLineId, string> = {

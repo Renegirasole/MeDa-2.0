@@ -108,6 +108,20 @@ export function minIncomeFor(
   return up(hi, 10);
 }
 
+/**
+ * Sueldo con el que la calculadora entera dice «sí, te da» para esa hipoteca,
+ * no solo la referencia del 35 %. Sale siempre igual o más alto que
+ * `minIncomeEffort`, porque además del esfuerzo mira margen, colchón y estrés.
+ */
+export function mortgageIncomeYes(
+  loan: number,
+  years: number = MORTGAGE_ASSUMPTIONS.years,
+  rate: number = MORTGAGE_ASSUMPTIONS.rate,
+): number | null {
+  const row = mortgageRow(loan, years, rate);
+  return minIncomeFor(referenceProfile(row), mortgagePurchase(loan, years, rate));
+}
+
 /** El caso titular de la guía: hipoteca de 200.000 €. */
 export function headlineCase(loan = 200_000) {
   const row = mortgageRow(loan);

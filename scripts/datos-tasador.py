@@ -143,6 +143,32 @@ for r in range(16, s.nrows):
         sale_muni[code] = [round(total), round(new) if new else None, round(old) if old else None]
 print("tasación municipios", len(sale_muni), "sin cruzar", unmatched)
 
+HISTORY = 12
+
+def sheet_values(sheet):
+    """Municipio (código INE) → valor tasado total de esa hoja trimestral."""
+    out, prov = {}, None
+    for r in range(16, sheet.nrows):
+        pname, mname = str(sheet.cell_value(r, 1)).strip(), str(sheet.cell_value(r, 2)).strip()
+        if pname:
+            prov = prov_by_name.get(norm(pname))
+        if not mname or prov is None:
+            continue
+        code = find_muni(prov, mname)
+        total = num(sheet.cell_value(r, 5))
+        if code and total:
+            out[code] = round(total)
+    return out
+
+book = xlrd.open_workbook(os.path.join(SRC, "muni.xls"), encoding_override="cp1252")
+quarters = book.sheet_names()[-HISTORY:]
+quarter_labels = [q.strip() for q in quarters]
+series = {}
+for name in quarters:
+    for code, value in sheet_values(book.sheet_by_name(name)).items():
+        series.setdefault(code, {})[name.strip()] = value
+print("serie histórica", len(series), "municipios,", len(quarters), "trimestres")
+
 s, _ = last_sheet(os.path.join(SRC, "prov.xls"))
 sale_prov, sale_national = {}, None
 for r in range(s.nrows):
@@ -170,9 +196,15 @@ for k, v in munis.items():
         "p": v["rec"]["CPRO"],
         "r": rent[:4] + [rent[4]] if rent else None,
         "s": sale_muni.get(k),
+        "h": [series.get(k, {}).get(q) for q in quarter_labels] if k in series else None,
     }
 provincias = {k: {"n": v["rec"]["LITPRO"], "r": v["rent"], "s": sale_prov.get(k)} for k, v in provs.items()}
-meta = {"rentYear": 2000 + int(YEAR), "salePeriod": sale_period, "nationalSale": sale_national}
+meta = {
+    "rentYear": 2000 + int(YEAR),
+    "salePeriod": sale_period,
+    "nationalSale": sale_national,
+    "quarters": quarter_labels,
+}
 with open(os.path.join(OUT, "municipios.json"), "w", encoding="utf-8") as f:
     json.dump({"meta": meta, "municipios": municipios, "provincias": provincias}, f, ensure_ascii=False, separators=(",", ":"))
 with open(os.path.join(OUT, "secciones.json"), "w", encoding="utf-8") as f:

@@ -49,7 +49,7 @@ export const GUIDES: Guide[] = [
     title: "¿Qué le da a un joven en 2026?",
     teaser: "Con el sueldo medio de su edad: el alquiler, el coche y la casa que le dan, y cuántos años tarda en ahorrar la entrada.",
     description:
-      "Informe MeDa 2026: con el sueldo medio de 25 a 34 años (INE), un alquiler de 500 €, un coche de 9.900 € y una casa de 140.000 €, tras 14 años de entrada.",
+      "Informe MeDa 2026: con el sueldo medio de 25 a 34 años (INE), un alquiler de 490 €, un coche de 9.900 € y una casa de 140.000 €, tras 14 años de entrada.",
     category: "alquilar-vivienda",
     published: "2026-09-19",
     updated: "2026-09-19",

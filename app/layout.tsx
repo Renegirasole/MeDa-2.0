@@ -51,6 +51,16 @@ const jsonLd = {
   offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
 };
 
+/**
+ * Modo de consentimiento v2: todo denegado hasta que el aviso de AdSense diga lo contrario.
+ * `wait_for_update` le da 500 ms al aviso; con denegado, Google usa medición sin cookies.
+ */
+const googleAdsBootstrap = (id: string) =>
+  `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}` +
+  `gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',wait_for_update:500});` +
+  `gtag('set','ads_data_redaction',true);gtag('set','url_passthrough',true);` +
+  `gtag('js',new Date());gtag('config','${id}');`;
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="es" className={geist.variable}>
@@ -62,6 +72,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             crossOrigin="anonymous"
             src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${SITE.adsenseClient}`}
           />
+        ) : null}
+        {SITE.googleAdsId ? (
+          <>
+            {/* El consentimiento va antes del cargador: sin permiso, Google mide sin cookies y estima. */}
+            <script dangerouslySetInnerHTML={{ __html: googleAdsBootstrap(SITE.googleAdsId) }} />
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${SITE.googleAdsId}`} />
+          </>
         ) : null}
       </head>
       <body className="flex min-h-dvh flex-col">

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 const POINTS = [
   { title: "Intención de compra real", text: "Quien usa MeDa está a punto de comprar, alquilar o reservar." },
   { title: "Por categoría", text: "Coche, vivienda, alquiler, viajes, tecnología, estudios y más." },
-  { title: "Sin tocar la nota", text: "Los patrocinios se marcan siempre y nunca cambian el cálculo ni el orden." },
+  { title: "Sin tocar la nota", text: "Los patrocinios se marcan siempre y nunca cambian el cálculo ni la nota del usuario." },
 ];
 
 export default function AdvertisePage() {

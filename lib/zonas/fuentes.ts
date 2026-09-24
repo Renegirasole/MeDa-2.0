@@ -95,6 +95,16 @@ export async function searchAddresses(query: string, limit = 6): Promise<Address
 }
 
 const FLOORS: Record<string, string> = { BJ: "bajo", EN: "entreplanta", SM: "semisótano", ST: "sótano", AT: "ático", PR: "principal" };
+/** Planta en número, para los coeficientes: el ático se trata como planta alta. */
+const LEVELS: Record<string, number> = { BJ: 0, EN: 0, SM: -1, ST: -1, AT: 7, PR: 1 };
+
+function floorLevel(pt: string): number | null {
+  if (!pt) return null;
+  const known = LEVELS[pt.toUpperCase()];
+  if (known !== undefined) return known;
+  const n = Number(pt);
+  return Number.isFinite(n) ? n : null;
+}
 
 function floorLabel(pt: string): string {
   if (!pt) return "";
@@ -126,6 +136,7 @@ function toDwelling(u: CatastroUnit): Dwelling | null {
     ref,
     label: parts.join(" · ") || "Vivienda única",
     floor,
+    level: floorLevel(str(loint.pt)),
     door,
     area: Math.round(area),
     year: Number.isFinite(year) && year > 1500 ? year : null,

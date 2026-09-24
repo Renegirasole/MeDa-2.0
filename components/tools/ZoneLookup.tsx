@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import type { Address, Dwelling, Zone } from "@/lib/zonas/tipos";
+import type { Address, Dwelling, ListingStats, Zone, ZoneMode } from "@/lib/zonas/tipos";
 import { Button } from "@/components/ui/Button";
 import { SelectField } from "@/components/ui/Field";
 import { IconCheck, IconWarning } from "@/components/ui/icons";
@@ -11,6 +11,8 @@ export interface ZoneResult {
   address: Address;
   zone: Zone;
   dwellings: Dwelling[];
+  /** Anuncios de la zona ahora mismo (idealista), si hay llave y cobertura */
+  listings: ListingStats | null;
   sources: { rentYear: number; salePeriod: string };
 }
 
@@ -19,11 +21,13 @@ export interface ZoneResult {
  * viviendas del edificio (Catastro). La persona solo escribe su calle.
  */
 export function ZoneLookup({
+  mode,
   result,
   onResult,
   onDwelling,
   selectedRef,
 }: {
+  mode: ZoneMode;
   result: ZoneResult | null;
   onResult: (r: ZoneResult | null) => void;
   onDwelling: (d: Dwelling | null) => void;
@@ -37,6 +41,23 @@ export function ZoneLookup({
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
   const box = useRef<HTMLDivElement>(null);
   const skip = useRef(false);
+
+  // Si la ciudad que ha escrito no sale en ninguna sugerencia, es que la calle no se llama así allí.
+  const missingTown = (() => {
+    if (options.length === 0) return null;
+    const plain = (t: string) =>
+      t
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+    const words = plain(query).split(/[^a-z0-9]+/).filter((w) => w.length > 3 && !/^\d+$/.test(w));
+    if (words.length === 0) return null;
+    const where = options.map((a) => plain(`${a.muniName} ${a.provName} ${a.postalCode}`)).join(" ");
+    const last = words[words.length - 1];
+    if (where.includes(last)) return null;
+    const typed = query.trim().split(/[,\s]+/).pop() ?? "";
+    return typed ? typed[0].toUpperCase() + typed.slice(1) : null;
+  })();
 
   useEffect(() => {
     if (skip.current) {
@@ -83,7 +104,7 @@ export function ZoneLookup({
     setOpen(false);
     setState("loading");
     try {
-      const params = new URLSearchParams({ muni: a.muniCode, lat: String(a.lat), lng: String(a.lng) });
+      const params = new URLSearchParams({ muni: a.muniCode, lat: String(a.lat), lng: String(a.lng), modo: mode });
       if (a.refCatastral) params.set("rc", a.refCatastral);
       const res = await fetch(`/api/zona?${params}`);
       if (!res.ok) throw new Error("zona");
@@ -211,9 +232,16 @@ export function ZoneLookup({
           No hemos podido consultar la dirección. Prueba otra vez o escribe los metros a mano.
         </p>
       )}
-      <p className="text-[13px] leading-snug text-muted">
-        Escribe calle, número y ciudad. No guardamos la dirección: solo la usamos para saber el barrio.
-      </p>
+      {missingTown ? (
+        <p className="text-[13px] leading-snug text-caution-700">
+          No encontramos esa calle en {missingTown}. Prueba con el nombre completo («Gran Vía Marqués del Turia 45») o con el
+          código postal.
+        </p>
+      ) : (
+        <p className="text-[13px] leading-snug text-muted">
+          Escribe calle, número y ciudad. No guardamos la dirección: solo la usamos para saber el barrio.
+        </p>
+      )}
     </div>
   );
 }
